@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,10 +52,10 @@ const Index = () => {
         <main className="container mx-auto px-4 py-8">
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
             <TabsContent value="dashboard">
-              <Dashboard />
+              <Dashboard onNavigate={setCurrentTab} />
             </TabsContent>
             <TabsContent value="clients">
-              <ClientManager />
+              <ClientManager onNavigate={setCurrentTab} />
             </TabsContent>
             <TabsContent value="calendar">
               <AppointmentCalendar />

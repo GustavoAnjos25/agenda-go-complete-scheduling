@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Users, Search, Plus, Phone, Mail, Calendar, MessageSquare } from 'lucide-react';
 
-const ClientManager = () => {
+interface ClientManagerProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const ClientManager = ({ onNavigate }: ClientManagerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    notes: ''
+  });
   
   const clients = [
     {
@@ -78,6 +87,29 @@ const ClientManager = () => {
     return colors[tag as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const handleSaveClient = () => {
+    if (!newClient.name || !newClient.email || !newClient.phone) {
+      alert('Por favor, preencha os campos obrigatórios (Nome, Email e Telefone)');
+      return;
+    }
+    
+    alert(`Cliente ${newClient.name} cadastrado com sucesso!`);
+    setNewClient({ name: '', email: '', phone: '', notes: '' });
+    setIsDialogOpen(false);
+  };
+
+  const handleClientAction = (action: string, clientName: string) => {
+    switch (action) {
+      case 'message':
+        alert(`Enviando mensagem para ${clientName}...`);
+        break;
+      case 'schedule':
+        onNavigate?.('calendar');
+        alert(`Redirecionando para agenda para ${clientName}...`);
+        break;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -86,7 +118,7 @@ const ClientManager = () => {
           <p className="text-gray-600">Gerencie todos os seus clientes em um só lugar</p>
         </div>
         
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600">
               <Plus className="w-4 h-4 mr-2" />
@@ -102,25 +134,56 @@ const ClientManager = () => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Nome</Label>
-                <Input id="name" className="col-span-3" />
+                <Label htmlFor="name" className="text-right">Nome*</Label>
+                <Input 
+                  id="name" 
+                  className="col-span-3" 
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">Email</Label>
-                <Input id="email" type="email" className="col-span-3" />
+                <Label htmlFor="email" className="text-right">Email*</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  className="col-span-3" 
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone" className="text-right">Telefone</Label>
-                <Input id="phone" className="col-span-3" />
+                <Label htmlFor="phone" className="text-right">Telefone*</Label>
+                <Input 
+                  id="phone" 
+                  className="col-span-3" 
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="notes" className="text-right">Observações</Label>
-                <Textarea id="notes" className="col-span-3" />
+                <Textarea 
+                  id="notes" 
+                  className="col-span-3" 
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
+                />
               </div>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline">Cancelar</Button>
-              <Button className="bg-gradient-to-r from-blue-500 to-green-500">Salvar</Button>
+              <Button 
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-green-500"
+                onClick={handleSaveClient}
+              >
+                Salvar
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -247,10 +310,18 @@ const ClientManager = () => {
                     <p className="text-gray-500">Última: {client.lastVisit}</p>
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleClientAction('message', client.name)}
+                    >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleClientAction('schedule', client.name)}
+                    >
                       <Calendar className="w-4 h-4" />
                     </Button>
                   </div>

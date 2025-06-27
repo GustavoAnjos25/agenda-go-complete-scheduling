@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,8 @@ import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight } from 'lucide-
 
 const AppointmentCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day'); // day, week, month
+  const [viewMode, setViewMode] = useState('day');
 
-  // Mock data for appointments
   const appointments = [
     {
       id: 1,
@@ -100,6 +98,24 @@ const AppointmentCalendar = () => {
     setCurrentDate(newDate);
   };
 
+  const handleNewAppointment = () => {
+    alert('Modal de novo agendamento será implementado em breve! Por enquanto, use este formulário rápido.');
+  };
+
+  const handleAppointmentClick = (appointment: any) => {
+    alert(`Detalhes do agendamento:\n\nCliente: ${appointment.client}\nServiço: ${appointment.service}\nHorário: ${appointment.time}\nProfissional: ${appointment.professional}\nStatus: ${getStatusLabel(appointment.status)}\nValor: R$ ${appointment.price}`);
+  };
+
+  const handleTimeSlotClick = (time: string) => {
+    const hasAppointment = appointments.some(apt => apt.time === time);
+    if (hasAppointment) {
+      const appointment = appointments.find(apt => apt.time === time);
+      handleAppointmentClick(appointment);
+    } else {
+      alert(`Horário ${time} disponível! Clique em "Novo Agendamento" para criar um compromisso.`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -108,7 +124,10 @@ const AppointmentCalendar = () => {
           <p className="text-gray-600">Gerencie todos os agendamentos</p>
         </div>
         
-        <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600">
+        <Button 
+          className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+          onClick={handleNewAppointment}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Agendamento
         </Button>
@@ -228,11 +247,12 @@ const AppointmentCalendar = () => {
                 {timeSlots.map((time) => (
                   <div 
                     key={time} 
-                    className={`p-2 text-sm rounded border ${
+                    className={`p-2 text-sm rounded border cursor-pointer hover:bg-opacity-80 transition-colors ${
                       appointments.some(apt => apt.time === time)
-                        ? 'bg-blue-50 border-blue-200 text-blue-800'
-                        : 'bg-gray-50 border-gray-200 text-gray-600'
+                        ? 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                     }`}
+                    onClick={() => handleTimeSlotClick(time)}
                   >
                     {time}
                   </div>
@@ -257,6 +277,7 @@ const AppointmentCalendar = () => {
                   <div 
                     key={appointment.id} 
                     className={`p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer ${getStatusColor(appointment.status)}`}
+                    onClick={() => handleAppointmentClick(appointment)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">

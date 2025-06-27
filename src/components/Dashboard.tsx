@@ -1,10 +1,13 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock, TrendingUp, DollarSign, CheckCircle } from 'lucide-react';
 
-const Dashboard = () => {
+interface DashboardProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const Dashboard = ({ onNavigate }: DashboardProps) => {
   const stats = [
     {
       title: 'Agendamentos Hoje',
@@ -90,6 +93,23 @@ const Dashboard = () => {
     );
   };
 
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'new-appointment':
+        onNavigate?.('calendar');
+        break;
+      case 'new-client':
+        onNavigate?.('clients');
+        break;
+      case 'check-in':
+        alert('Funcionalidade de Check-in será implementada em breve!');
+        break;
+      case 'reports':
+        alert('Relatórios em desenvolvimento. Em breve você terá acesso completo!');
+        break;
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -134,7 +154,11 @@ const Dashboard = () => {
                 Próximos compromissos e status atual
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onNavigate?.('calendar')}
+            >
               Ver Todos
             </Button>
           </div>
@@ -179,19 +203,34 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 h-16 flex flex-col">
+            <Button 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 h-16 flex flex-col"
+              onClick={() => handleQuickAction('new-appointment')}
+            >
               <Calendar className="w-5 h-5 mb-1" />
               <span className="text-sm">Novo Agendamento</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex flex-col"
+              onClick={() => handleQuickAction('new-client')}
+            >
               <Users className="w-5 h-5 mb-1" />
               <span className="text-sm">Cadastrar Cliente</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex flex-col"
+              onClick={() => handleQuickAction('check-in')}
+            >
               <CheckCircle className="w-5 h-5 mb-1" />
               <span className="text-sm">Check-in</span>
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col">
+            <Button 
+              variant="outline" 
+              className="h-16 flex flex-col"
+              onClick={() => handleQuickAction('reports')}
+            >
               <TrendingUp className="w-5 h-5 mb-1" />
               <span className="text-sm">Relatórios</span>
             </Button>
