@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import NewAppointmentModal from './NewAppointmentModal';
 
 const AppointmentCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('day');
-
-  const appointments = [
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [appointments, setAppointments] = useState([
     {
       id: 1,
       time: '09:00',
@@ -49,7 +50,7 @@ const AppointmentCalendar = () => {
       status: 'completed',
       price: 120
     }
-  ];
+  ]);
 
   const timeSlots = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -99,11 +100,43 @@ const AppointmentCalendar = () => {
   };
 
   const handleNewAppointment = () => {
-    alert('Modal de novo agendamento será implementado em breve! Por enquanto, use este formulário rápido.');
+    console.log('Opening new appointment modal');
+    setIsNewAppointmentOpen(true);
+  };
+
+  const handleSaveAppointment = (newAppointment: any) => {
+    console.log('Saving new appointment:', newAppointment);
+    setAppointments(prev => [...prev, newAppointment]);
+    alert(`Agendamento criado com sucesso!\n\nCliente: ${newAppointment.client}\nServiço: ${newAppointment.service}\nData: ${newAppointment.date}\nHorário: ${newAppointment.time}`);
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    alert(`Detalhes do agendamento:\n\nCliente: ${appointment.client}\nServiço: ${appointment.service}\nHorário: ${appointment.time}\nProfissional: ${appointment.professional}\nStatus: ${getStatusLabel(appointment.status)}\nValor: R$ ${appointment.price}`);
+    const options = ['Reagendar', 'Cancelar', 'Alterar Status', 'Fechar'];
+    const choice = prompt(`Agendamento: ${appointment.client}\n\nEscolha uma opção:\n1 - Reagendar\n2 - Cancelar\n3 - Alterar Status\n4 - Fechar\n\nDigite o número da opção:`);
+    
+    switch(choice) {
+      case '1':
+        alert('Funcionalidade de reagendamento será implementada em breve!');
+        break;
+      case '2':
+        if (confirm(`Tem certeza que deseja cancelar o agendamento de ${appointment.client}?`)) {
+          setAppointments(prev => prev.filter(apt => apt.id !== appointment.id));
+          alert('Agendamento cancelado com sucesso!');
+        }
+        break;
+      case '3':
+        const newStatus = prompt('Novo status:\n1 - Confirmado\n2 - Pendente\n3 - Concluído\n\nDigite o número:');
+        const statusMap = { '1': 'confirmed', '2': 'pending', '3': 'completed' };
+        if (newStatus && statusMap[newStatus as keyof typeof statusMap]) {
+          setAppointments(prev => prev.map(apt => 
+            apt.id === appointment.id 
+              ? { ...apt, status: statusMap[newStatus as keyof typeof statusMap] }
+              : apt
+          ));
+          alert('Status atualizado com sucesso!');
+        }
+        break;
+    }
   };
 
   const handleTimeSlotClick = (time: string) => {
@@ -112,7 +145,10 @@ const AppointmentCalendar = () => {
       const appointment = appointments.find(apt => apt.time === time);
       handleAppointmentClick(appointment);
     } else {
-      alert(`Horário ${time} disponível! Clique em "Novo Agendamento" para criar um compromisso.`);
+      const shouldCreate = confirm(`Horário ${time} disponível!\n\nDeseja criar um novo agendamento para este horário?`);
+      if (shouldCreate) {
+        setIsNewAppointmentOpen(true);
+      }
     }
   };
 
@@ -316,6 +352,12 @@ const AppointmentCalendar = () => {
           </Card>
         </div>
       </div>
+
+      <NewAppointmentModal
+        isOpen={isNewAppointmentOpen}
+        onClose={() => setIsNewAppointmentOpen(false)}
+        onSave={handleSaveAppointment}
+      />
     </div>
   );
 };

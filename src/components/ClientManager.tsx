@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Search, Plus, Phone, Mail, Calendar, MessageSquare } from 'lucide-react';
+import { Users, Search, Plus, Phone, Mail, Calendar, MessageSquare, Settings } from 'lucide-react';
+import ClientStatusModal from './ClientStatusModal';
 
 interface ClientManagerProps {
   onNavigate?: (tab: string) => void;
@@ -16,6 +17,8 @@ interface ClientManagerProps {
 const ClientManager = ({ onNavigate }: ClientManagerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   const [newClient, setNewClient] = useState({
     name: '',
     email: '',
@@ -23,7 +26,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
     notes: ''
   });
   
-  const clients = [
+  const [clients, setClients] = useState([
     {
       id: 1,
       name: 'Maria Silva',
@@ -68,7 +71,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
       preferredServices: ['Massagem'],
       notes: 'Prefere horários após 16h'
     }
-  ];
+  ]);
 
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,21 +96,47 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
       return;
     }
     
+    const clientToAdd = {
+      id: Date.now(),
+      ...newClient,
+      lastVisit: new Date().toISOString().split('T')[0],
+      totalVisits: 0,
+      tags: ['Novo'],
+      preferredServices: []
+    };
+    
+    setClients(prev => [...prev, clientToAdd]);
     alert(`Cliente ${newClient.name} cadastrado com sucesso!`);
     setNewClient({ name: '', email: '', phone: '', notes: '' });
     setIsDialogOpen(false);
   };
 
-  const handleClientAction = (action: string, clientName: string) => {
+  const handleClientAction = (action: string, client: any) => {
+    console.log('Client action:', action, client);
     switch (action) {
       case 'message':
-        alert(`Enviando mensagem para ${clientName}...`);
+        alert(`Enviando mensagem para ${client.name}...\n\n📱 WhatsApp: ${client.phone}\n📧 Email: ${client.email}\n\nFuncionalidade será implementada em breve!`);
         break;
       case 'schedule':
         onNavigate?.('calendar');
-        alert(`Redirecionando para agenda para ${clientName}...`);
+        alert(`Redirecionando para agenda para ${client.name}...`);
+        break;
+      case 'status':
+        console.log('Opening status modal for:', client);
+        setSelectedClient(client);
+        setIsStatusModalOpen(true);
         break;
     }
+  };
+
+  const handleUpdateClientStatus = (clientId: number, newTags: string[]) => {
+    console.log('Updating client status:', clientId, newTags);
+    setClients(prev => prev.map(client => 
+      client.id === clientId 
+        ? { ...client, tags: newTags }
+        : client
+    ));
+    alert('Status do cliente atualizado com sucesso!');
   };
 
   return (
@@ -313,16 +342,23 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleClientAction('message', client.name)}
+                      onClick={() => handleClientAction('message', client)}
                     >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleClientAction('schedule', client.name)}
+                      onClick={() => handleClientAction('schedule', client)}
                     >
                       <Calendar className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleClientAction('status', client)}
+                    >
+                      <Settings className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -331,6 +367,13 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
           </div>
         </CardContent>
       </Card>
+
+      <ClientStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        client={selectedClient}
+        onUpdateStatus={handleUpdateClientStatus}
+      />
     </div>
   );
 };

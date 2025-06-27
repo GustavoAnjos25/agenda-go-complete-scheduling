@@ -94,19 +94,30 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
   };
 
   const handleQuickAction = (action: string) => {
+    console.log('Quick action clicked:', action);
     switch (action) {
       case 'new-appointment':
-        onNavigate?.('calendar');
+        console.log('Navigating to calendar for new appointment');
+        if (onNavigate) {
+          onNavigate('calendar');
+        }
         break;
       case 'new-client':
-        onNavigate?.('clients');
+        console.log('Navigating to clients');
+        if (onNavigate) {
+          onNavigate('clients');
+        }
         break;
       case 'check-in':
-        alert('Funcionalidade de Check-in será implementada em breve!');
+        console.log('Opening check-in functionality');
+        alert('Funcionalidade de Check-in:\n\n✅ Confirmar presença de clientes\n✅ Atualizar status automaticamente\n✅ Registrar chegada antecipada/atrasada\n\nEm breve será implementada!');
         break;
       case 'reports':
-        alert('Relatórios em desenvolvimento. Em breve você terá acesso completo!');
+        console.log('Opening reports');
+        alert('Relatórios Disponíveis:\n\n📊 Agendamentos por período\n📈 Taxa de comparecimento\n💰 Faturamento\n📋 Relatório de cancelamentos\n📑 Exportação PDF/Excel\n\nEm desenvolvimento!');
         break;
+      default:
+        console.log('Unknown action:', action);
     }
   };
 
