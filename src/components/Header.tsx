@@ -1,6 +1,15 @@
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, Users, BarChart3, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   onTabChange: (tab: string) => void;
@@ -8,50 +17,77 @@ interface HeaderProps {
 }
 
 const Header = ({ onTabChange, currentTab }: HeaderProps) => {
-  const menuItems = [
-    { id: 'home', label: 'Início' },
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'calendar', label: 'Agenda' },
-    { id: 'clients', label: 'Clientes' },
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao sair",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const navigation = [
+    { id: 'home', label: 'Início', icon: Calendar },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'calendar', label: 'Agenda', icon: Calendar },
   ];
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
+    <header className="bg-white shadow-sm border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-8 h-8 text-blue-600" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                AgendaGo
+              </h1>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">AgendaGo</h1>
-              <Badge variant="secondary" className="text-xs">BETA</Badge>
-            </div>
+            
+            <nav className="hidden md:flex space-x-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.id}
+                    variant={currentTab === item.id ? "default" : "ghost"}
+                    onClick={() => onTabChange(item.id)}
+                    className="flex items-center space-x-2"
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Button>
+                );
+              })}
+            </nav>
           </div>
-          
-          <nav className="hidden md:flex space-x-8">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                className={`font-medium transition-colors ${
-                  currentTab === item.id
-                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
-                    : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-          
+
           <div className="flex items-center space-x-4">
-            <Button variant="outline" className="hidden md:inline-flex">
-              Entrar
-            </Button>
-            <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600">
-              Começar Grátis
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span className="hidden md:inline">{user?.email}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

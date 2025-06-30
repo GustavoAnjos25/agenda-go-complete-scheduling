@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +9,11 @@ import Header from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
 import ClientManager from '@/components/ClientManager';
 import AppointmentCalendar from '@/components/AppointmentCalendar';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [currentTab, setCurrentTab] = useState('home');
+  const { user } = useAuth();
 
   const features = [
     {
@@ -76,7 +79,7 @@ const Index = () => {
         <div className="relative container mx-auto px-4 py-20">
           <div className="max-w-4xl mx-auto text-center">
             <Badge className="mb-6 bg-white/20 text-white hover:bg-white/30">
-              🚀 A Plataforma Mais Completa
+              🚀 Bem-vindo, {user?.email?.split('@')[0]}!
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
               AgendaGo
@@ -91,14 +94,15 @@ const Index = () => {
                 className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-3 rounded-xl shadow-lg"
                 onClick={() => setCurrentTab('dashboard')}
               >
-                Experimentar Agora
+                Acessar Dashboard
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
                 className="border-white text-white hover:bg-white/10 font-semibold px-8 py-3 rounded-xl"
+                onClick={() => setCurrentTab('calendar')}
               >
-                Ver Demonstração
+                Ver Agenda
               </Button>
             </div>
           </div>
@@ -183,14 +187,14 @@ const Index = () => {
             Pronto para revolucionar seus agendamentos?
           </h2>
           <p className="text-xl mb-8 text-gray-300 max-w-2xl mx-auto">
-            Junte-se a milhares de profissionais que já transformaram seus negócios com o AgendaGo
+            Você já está conectado! Comece a explorar todas as funcionalidades do AgendaGo
           </p>
           <Button 
             size="lg" 
             className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 font-semibold px-8 py-3 rounded-xl shadow-lg"
             onClick={() => setCurrentTab('dashboard')}
           >
-            Começar Gratuitamente
+            Explorar Funcionalidades
           </Button>
         </div>
       </section>
