@@ -11,11 +11,14 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          check_in_status: string | null
           client_id: string
           created_at: string | null
           date: string
           id: string
           notes: string | null
+          payment_status: string | null
+          professional_id: string | null
           service_id: string
           status: Database["public"]["Enums"]["appointment_status"] | null
           time: string
@@ -23,11 +26,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          check_in_status?: string | null
           client_id: string
           created_at?: string | null
           date: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
+          professional_id?: string | null
           service_id: string
           status?: Database["public"]["Enums"]["appointment_status"] | null
           time: string
@@ -35,11 +41,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          check_in_status?: string | null
           client_id?: string
           created_at?: string | null
           date?: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
+          professional_id?: string | null
           service_id?: string
           status?: Database["public"]["Enums"]["appointment_status"] | null
           time?: string
@@ -52,6 +61,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
           {
@@ -94,6 +110,113 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      professional_availability: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean | null
+          professional_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          professional_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          professional_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_availability_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_services: {
+        Row: {
+          id: string
+          professional_id: string
+          service_id: string
+        }
+        Insert: {
+          id?: string
+          professional_id: string
+          service_id: string
+        }
+        Update: {
+          id?: string
+          professional_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professionals: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          specialties: string[] | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          specialties?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          specialties?: string[] | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
