@@ -147,27 +147,15 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
 
       if (existingClients && existingClients.length > 0) {
         clientId = existingClients[0].id;
-        
-        // Atualizar contador de visitas
-        const { error: updateError } = await supabase
-          .from('clients')
-          .update({ 
-            total_visits: await getCurrentVisitCount(clientId) + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', clientId);
-
-        if (updateError) console.error('Erro ao atualizar visitas:', updateError);
       } else {
-        // Criar novo cliente
+        // Criar novo cliente - removendo total_visits que não existe na tabela
         const { data: newClient, error: clientError } = await supabase
           .from('clients')
           .insert([{
             name: formData.clientName,
             email: formData.clientEmail || null,
             phone: formData.clientPhone || null,
-            user_id: user.id,
-            total_visits: 1
+            user_id: user.id
           }])
           .select()
           .single();
@@ -176,7 +164,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
         clientId = newClient.id;
       }
 
-      // Criar agendamento (removido o total_price que não existe na tabela)
+      // Criar agendamento
       const { error: appointmentError } = await supabase
         .from('appointments')
         .insert([{
@@ -220,22 +208,6 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getCurrentVisitCount = async (clientId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('id')
-        .eq('client_id', clientId)
-        .eq('status', 'completed');
-
-      if (error) throw error;
-      return data?.length || 0;
-    } catch (error) {
-      console.error('Erro ao contar visitas:', error);
-      return 0;
     }
   };
 
