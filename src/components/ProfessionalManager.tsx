@@ -4,19 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Plus, Clock, Settings, Phone, Mail } from 'lucide-react';
+import { Users, Plus, Edit, Clock, Trash2, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import PhoneInput from './PhoneInput';
+import ProfessionalAvailabilityManager from './ProfessionalAvailabilityManager';
 
 const ProfessionalManager = () => {
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedProfessional, setSelectedProfessional] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProfessional, setEditingProfessional] = useState(null);
+  const [availabilityProfessional, setAvailabilityProfessional] = useState(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -27,15 +37,7 @@ const ProfessionalManager = () => {
     phone: '',
     specialties: [],
     services: [],
-    availability: {
-      monday: { active: true, start: '08:00', end: '18:00' },
-      tuesday: { active: true, start: '08:00', end: '18:00' },
-      wednesday: { active: true, start: '08:00', end: '18:00' },
-      thursday: { active: true, start: '08:00', end: '18:00' },
-      friday: { active: true, start: '08:00', end: '18:00' },
-      saturday: { active: false, start: '08:00', end: '12:00' },
-      sunday: { active: false, start: '08:00', end: '12:00' }
-    }
+    status: 'active'
   });
 
   useEffect(() => {
@@ -46,6 +48,7 @@ const ProfessionalManager = () => {
   }, [user]);
 
   const loadProfessionals = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('professionals')
@@ -53,19 +56,28 @@ const ProfessionalManager = () => {
           *,
           professional_services (
             services (*)
-          ),
-          professional_availability (*)
+          )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('name');
 
       if (error) throw error;
-      setProfessionals(data || []);
+
+      const formattedProfessionals = data?.map(prof => ({
+        ...prof,
+        services: prof.professional_services?.map(ps => ps.services) || []
+      })) || [];
+
+      setProfessionals(formattedProfessionals);
     } catch (error) {
+      console.error('Erro ao carregar profissionais:', error);
       toast({
         title: "Erro ao carregar profissionais",
         description: "Tente novamente",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,179 +91,7 @@ const ProfessionalManager = () => {
       if (error) throw error;
       setServices(data || []);
     } catch (error) {
-      toast({
-        title: "Erro ao carregar serviços",
-        description: "Tente novamente",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const loadProfessionalAvailability = async (professionalId) => {
-    try {
-      const { data, error } = await supabase
-        .from('professional_availability')
-        .select('*')
-        .eq('professional_id', professionalId);
-
-      if (error) throw error;
-
-      const availability = {
-        sunday: { active: false, start: '08:00', end: '18:00' },
-        monday: { active: false, start: '08:00', end: '18:00' },
-        tuesday: { active: false, start: '08:00', end: '18:00' },
-        wednesday: { active: false, start: '08:00', end: '18:00' },
-        thursday: { active: false, start: '08:00', end: '18:00' },
-        friday: { active: false, start: '08:00', end: '18:00' },
-        saturday: { active: false, start: '08:00', end: '12:00' }
-      };
-
-      // Mapear corretamente os dias da semana (0=domingo, 1=segunda, etc.)
-      const dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-      data?.forEach(record => {
-        const dayName = dayMapping[record.day_of_week];
-        console.log(`Carregando disponibilidade: dia ${record.day_of_week} (${dayName}) = ${record.is_available} de ${record.start_time} às ${record.end_time}`);
-        
-        if (dayName && availability[dayName]) {
-          availability[dayName] = {
-            active: record.is_available,
-            start: record.start_time,
-            end: record.end_time
-          };
-        }
-      });
-
-      console.log('Disponibilidade carregada:', availability);
-      return availability;
-    } catch (error) {
-      console.error('Erro ao carregar disponibilidade:', error);
-      return formData.availability;
-    }
-  };
-
-  const handleSaveProfessional = async () => {
-    if (!formData.name || !formData.email) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Nome e email são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const professionalData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        specialties: formData.specialties,
-        user_id: user.id
-      };
-
-      let professionalId;
-
-      if (selectedProfessional) {
-        const { error } = await supabase
-          .from('professionals')
-          .update(professionalData)
-          .eq('id', selectedProfessional.id);
-        
-        if (error) throw error;
-        professionalId = selectedProfessional.id;
-      } else {
-        const { data, error } = await supabase
-          .from('professionals')
-          .insert([professionalData])
-          .select()
-          .single();
-        
-        if (error) throw error;
-        professionalId = data.id;
-      }
-
-      // Salvar disponibilidade - remover todas existentes primeiro
-      await supabase
-        .from('professional_availability')
-        .delete()
-        .eq('professional_id', professionalId);
-
-      // Inserir novas disponibilidades com mapeamento correto
-      const availabilityData = [];
-      
-      // Mapear dias corretamente (0=domingo, 1=segunda, etc.)
-      const dayMapping = {
-        'sunday': 0,
-        'monday': 1,
-        'tuesday': 2,
-        'wednesday': 3,
-        'thursday': 4,
-        'friday': 5,
-        'saturday': 6
-      };
-
-      Object.entries(formData.availability).forEach(([dayName, config]) => {
-        const dayOfWeek = dayMapping[dayName];
-        console.log(`Salvando disponibilidade: ${dayName} (${dayOfWeek}) = ${config.active} de ${config.start} às ${config.end}`);
-        
-        availabilityData.push({
-          professional_id: professionalId,
-          day_of_week: dayOfWeek,
-          start_time: config.start,
-          end_time: config.end,
-          is_available: config.active
-        });
-      });
-
-      if (availabilityData.length > 0) {
-        console.log('Inserindo disponibilidades:', availabilityData);
-        const { error } = await supabase
-          .from('professional_availability')
-          .insert(availabilityData);
-        
-        if (error) {
-          console.error('Erro ao inserir disponibilidades:', error);
-          throw error;
-        }
-      }
-
-      // Salvar serviços - remover todos existentes primeiro
-      await supabase
-        .from('professional_services')
-        .delete()
-        .eq('professional_id', professionalId);
-
-      if (formData.services.length > 0) {
-        const serviceData = formData.services.map(serviceId => ({
-          professional_id: professionalId,
-          service_id: serviceId
-        }));
-
-        const { error } = await supabase
-          .from('professional_services')
-          .insert(serviceData);
-        
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Profissional salvo!",
-        description: "Dados atualizados com sucesso",
-      });
-
-      setIsDialogOpen(false);
-      resetForm();
-      loadProfessionals();
-    } catch (error) {
-      console.error('Erro ao salvar profissional:', error);
-      toast({
-        title: "Erro ao salvar",
-        description: "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Erro ao carregar serviços:', error);
     }
   };
 
@@ -262,293 +102,292 @@ const ProfessionalManager = () => {
       phone: '',
       specialties: [],
       services: [],
-      availability: {
-        monday: { active: true, start: '08:00', end: '18:00' },
-        tuesday: { active: true, start: '08:00', end: '18:00' },
-        wednesday: { active: true, start: '08:00', end: '18:00' },
-        thursday: { active: true, start: '08:00', end: '18:00' },
-        friday: { active: true, start: '08:00', end: '18:00' },
-        saturday: { active: false, start: '08:00', end: '12:00' },
-        sunday: { active: false, start: '08:00', end: '12:00' }
-      }
+      status: 'active'
     });
-    setSelectedProfessional(null);
+    setEditingProfessional(null);
   };
 
-  const handleEditProfessional = async (professional) => {
-    setSelectedProfessional(professional);
-    
-    // Carregar disponibilidade do profissional
-    const availability = await loadProfessionalAvailability(professional.id);
-    
+  const handleEdit = (professional) => {
+    setEditingProfessional(professional);
     setFormData({
-      name: professional.name,
+      name: professional.name || '',
       email: professional.email || '',
       phone: professional.phone || '',
       specialties: professional.specialties || [],
-      services: professional.professional_services?.map(ps => ps.services.id) || [],
-      availability: availability
+      services: professional.services?.map(s => s.id) || [],
+      status: professional.status || 'active'
     });
-    setIsDialogOpen(true);
+    setIsModalOpen(true);
   };
 
-  const dayNames = {
-    sunday: 'Domingo',
-    monday: 'Segunda',
-    tuesday: 'Terça',
-    wednesday: 'Quarta',
-    thursday: 'Quinta',
-    friday: 'Sexta',
-    saturday: 'Sábado'
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Nome obrigatório",
+        description: "Digite o nome do profissional",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const professionalData = {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        specialties: formData.specialties.length > 0 ? formData.specialties : null,
+        status: formData.status,
+        user_id: user.id
+      };
+
+      let professionalId;
+
+      if (editingProfessional) {
+        // Atualizar profissional existente
+        const { error: updateError } = await supabase
+          .from('professionals')
+          .update(professionalData)
+          .eq('id', editingProfessional.id);
+
+        if (updateError) throw updateError;
+        professionalId = editingProfessional.id;
+
+        toast({
+          title: "Profissional atualizado!",
+          description: `${formData.name} foi atualizado com sucesso`,
+        });
+      } else {
+        // Criar novo profissional
+        const { data: newProfessional, error: insertError } = await supabase
+          .from('professionals')
+          .insert([professionalData])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        professionalId = newProfessional.id;
+
+        toast({
+          title: "Profissional criado!",
+          description: `${formData.name} foi adicionado com sucesso`,
+        });
+      }
+
+      // Atualizar serviços do profissional
+      // Primeiro remover todos os serviços existentes
+      await supabase
+        .from('professional_services')
+        .delete()
+        .eq('professional_id', professionalId);
+
+      // Adicionar novos serviços
+      if (formData.services.length > 0) {
+        const serviceInserts = formData.services.map(serviceId => ({
+          professional_id: professionalId,
+          service_id: serviceId
+        }));
+
+        const { error: servicesError } = await supabase
+          .from('professional_services')
+          .insert(serviceInserts);
+
+        if (servicesError) throw servicesError;
+      }
+
+      resetForm();
+      setIsModalOpen(false);
+      loadProfessionals();
+    } catch (error) {
+      console.error('Erro ao salvar profissional:', error);
+      toast({
+        title: "Erro ao salvar profissional",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (professional) => {
+    if (!confirm(`Tem certeza que deseja excluir ${professional.name}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('professionals')
+        .delete()
+        .eq('id', professional.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profissional excluído!",
+        description: `${professional.name} foi removido com sucesso`,
+      });
+
+      loadProfessionals();
+    } catch (error) {
+      console.error('Erro ao excluir profissional:', error);
+      toast({
+        title: "Erro ao excluir profissional",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManageAvailability = (professional) => {
+    setAvailabilityProfessional(professional);
+  };
+
+  const handleCloseAvailability = () => {
+    setAvailabilityProfessional(null);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Profissionais</h1>
-          <p className="text-gray-600">Gerencie profissionais e suas disponibilidades</p>
+          <p className="text-gray-600">Gerencie a equipe e disponibilidade</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-gradient-to-r from-blue-500 to-green-500"
+              className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 w-full sm:w-auto"
               onClick={resetForm}
             >
               <Plus className="w-4 h-4 mr-2" />
               Novo Profissional
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
-                {selectedProfessional ? 'Editar Profissional' : 'Novo Profissional'}
+                {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
               </DialogTitle>
               <DialogDescription>
-                Configure os dados e disponibilidade do profissional
+                {editingProfessional ? 'Edite os dados do profissional' : 'Cadastre um novo membro da equipe'}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6">
-              {/* Dados básicos */}
-              <div className="space-y-4">
-                <h3 className="font-semibold">Dados Pessoais</h3>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="name">Nome*</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Nome completo do profissional"
+                  />
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Nome*</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email*</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
+                      placeholder="email@exemplo.com"
                     />
                   </div>
                   <div>
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input
+                    <PhoneInput
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(value) => setFormData({...formData, phone: value})}
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Serviços */}
-              <div className="space-y-4">
-                <h3 className="font-semibold">Serviços Oferecidos</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {services.map((service) => (
-                    <div key={service.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`service-${service.id}`}
-                        checked={formData.services.includes(service.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              services: [...formData.services, service.id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              services: formData.services.filter(id => id !== service.id)
-                            });
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`service-${service.id}`}>{service.name}</Label>
-                    </div>
-                  ))}
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              {/* Disponibilidade */}
-              <div className="space-y-4">
-                <h3 className="font-semibold">Horários de Atendimento</h3>
-                <div className="space-y-3">
-                  {Object.entries(dayNames).map(([day, label]) => (
-                    <div key={day} className="flex items-center space-x-4">
-                      <div className="w-20">
+                <div>
+                  <Label>Serviços que realiza</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {services.map((service) => (
+                      <div key={service.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={`day-${day}`}
-                          checked={formData.availability[day].active}
+                          id={`service-${service.id}`}
+                          checked={formData.services.includes(service.id)}
                           onCheckedChange={(checked) => {
-                            setFormData({
-                              ...formData,
-                              availability: {
-                                ...formData.availability,
-                                [day]: {
-                                  ...formData.availability[day],
-                                  active: checked
-                                }
-                              }
-                            });
+                            if (checked) {
+                              setFormData({...formData, services: [...formData.services, service.id]});
+                            } else {
+                              setFormData({...formData, services: formData.services.filter(s => s !== service.id)});
+                            }
                           }}
                         />
-                        <Label htmlFor={`day-${day}`} className="ml-2">{label}</Label>
+                        <Label htmlFor={`service-${service.id}`} className="text-sm">
+                          {service.name}
+                        </Label>
                       </div>
-                      
-                      {formData.availability[day].active && (
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            type="time"
-                            value={formData.availability[day].start}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                availability: {
-                                  ...formData.availability,
-                                  [day]: {
-                                    ...formData.availability[day],
-                                    start: e.target.value
-                                  }
-                                }
-                              });
-                            }}
-                            className="w-24"
-                          />
-                          <span>às</span>
-                          <Input
-                            type="time"
-                            value={formData.availability[day].end}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                availability: {
-                                  ...formData.availability,
-                                  [day]: {
-                                    ...formData.availability[day],
-                                    end: e.target.value
-                                  }
-                                }
-                              });
-                            }}
-                            className="w-24"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancelar
               </Button>
               <Button 
-                onClick={handleSaveProfessional} 
+                onClick={handleSave} 
                 disabled={loading}
                 className="bg-gradient-to-r from-blue-500 to-green-500"
               >
-                {loading ? "Salvando..." : "Salvar"}
+                {loading ? "Salvando..." : (editingProfessional ? "Atualizar" : "Criar")}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Lista de profissionais */}
+      {/* Gerenciador de Disponibilidade */}
+      {availabilityProfessional && (
+        <ProfessionalAvailabilityManager
+          professionalId={availabilityProfessional.id}
+          professionalName={availabilityProfessional.name}
+          onClose={handleCloseAvailability}
+        />
+      )}
+
+      {/* Lista de Profissionais */}
       <div className="grid gap-4">
-        {professionals.map((professional) => (
-          <Card key={professional.id}>
+        {loading ? (
+          <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium">
-                      {professional.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{professional.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      {professional.email && (
-                        <span className="flex items-center">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {professional.email}
-                        </span>
-                      )}
-                      {professional.phone && (
-                        <span className="flex items-center">
-                          <Phone className="w-3 h-3 mr-1" />
-                          {professional.phone}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {professional.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                      {professional.professional_services?.length > 0 && (
-                        <Badge variant="outline">
-                          {professional.professional_services.length} serviços
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditProfessional(professional)}
-                  >
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              <p className="text-center">Carregando profissionais...</p>
             </CardContent>
           </Card>
-        ))}
-
-        {professionals.length === 0 && (
+        ) : professionals.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">
-                  Nenhum profissional cadastrado
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Cadastre profissionais para começar a receber agendamentos
-                </p>
+                <p className="text-gray-500 mb-4">Nenhum profissional cadastrado</p>
                 <Button 
-                  onClick={() => setIsDialogOpen(true)}
+                  onClick={() => setIsModalOpen(true)}
                   className="bg-gradient-to-r from-blue-500 to-green-500"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -557,6 +396,86 @@ const ProfessionalManager = () => {
               </div>
             </CardContent>
           </Card>
+        ) : (
+          professionals.map((professional) => (
+            <Card key={professional.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium">
+                        {professional.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{professional.name}</CardTitle>
+                      <CardDescription>
+                        {professional.email && (
+                          <span className="mr-4">{professional.email}</span>
+                        )}
+                        {professional.phone && (
+                          <span>{professional.phone}</span>
+                        )}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={professional.status === 'active' ? 'default' : 'secondary'}>
+                      {professional.status === 'active' ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Serviços:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {professional.services?.length > 0 ? (
+                        professional.services.map((service) => (
+                          <Badge key={service.id} variant="outline">
+                            {service.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">Nenhum serviço configurado</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(professional)}
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleManageAvailability(professional)}
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      <Clock className="w-4 h-4 mr-1" />
+                      Horários
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(professional)}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Excluir
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>

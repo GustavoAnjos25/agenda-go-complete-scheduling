@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import NewAppointmentModalWithDB from './NewAppointmentModalWithDB';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -174,6 +175,16 @@ const AppointmentCalendar = () => {
     }
   };
 
+  // Calcular faturamento previsto excluindo cancelados
+  const expectedRevenue = appointments
+    .filter(apt => apt.status !== 'cancelled')
+    .reduce((sum, apt) => sum + (apt.price || 0), 0);
+
+  // Função para determinar se um horário está disponível
+  const isTimeSlotAvailable = (time: string) => {
+    return !appointments.some(apt => apt.time === time && apt.status !== 'cancelled');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -277,11 +288,11 @@ const AppointmentCalendar = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <span className="text-sm text-green-600">R$</span>
+              <DollarSign className="h-4 w-4 text-green-600" />
               <div className="ml-2">
                 <p className="text-sm font-medium text-gray-600">Faturamento Previsto</p>
                 <p className="text-2xl font-bold text-gray-800">
-                  R$ {appointments.reduce((sum, apt) => sum + (apt.price || 0), 0).toFixed(2)}
+                  R$ {expectedRevenue.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -296,22 +307,42 @@ const AppointmentCalendar = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Horários</CardTitle>
+              <CardDescription>
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                    <span>Disponível</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+                    <span>Ocupado</span>
+                  </div>
+                </div>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {timeSlots.map((time) => (
-                  <div 
-                    key={time} 
-                    className={`p-2 text-sm rounded border cursor-pointer hover:bg-opacity-80 transition-colors ${
-                      appointments.some(apt => apt.time === time)
-                        ? 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}
-                    onClick={() => handleTimeSlotClick(time)}
-                  >
-                    {time}
-                  </div>
-                ))}
+                {timeSlots.map((time) => {
+                  const isAvailable = isTimeSlotAvailable(time);
+                  return (
+                    <div 
+                      key={time} 
+                      className={`p-2 text-sm rounded border cursor-pointer hover:bg-opacity-80 transition-colors ${
+                        isAvailable
+                          ? 'bg-green-50 border-green-200 text-green-800 hover:bg-green-100'
+                          : 'bg-red-50 border-red-200 text-red-800 hover:bg-red-100'
+                      }`}
+                      onClick={() => handleTimeSlotClick(time)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{time}</span>
+                        <span className="text-xs">
+                          {isAvailable ? 'Livre' : 'Ocupado'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

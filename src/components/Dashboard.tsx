@@ -1,91 +1,119 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, TrendingUp, DollarSign, CheckCircle } from 'lucide-react';
+import { Calendar, Users, Clock, TrendingUp, DollarSign, CheckCircle, AlertCircle, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardProps {
   onNavigate?: (tab: string) => void;
 }
 
 const Dashboard = ({ onNavigate }: DashboardProps) => {
-  const stats = [
-    {
-      title: 'Agendamentos Hoje',
-      value: '12',
-      change: '+8%',
-      changeType: 'positive',
-      icon: Calendar,
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      title: 'Clientes Ativos',
-      value: '247',
-      change: '+12%',
-      changeType: 'positive',
-      icon: Users,
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      title: 'Taxa de Comparecimento',
-      value: '94%',
-      change: '+2%',
-      changeType: 'positive',
-      icon: CheckCircle,
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      title: 'Faturamento Previsto',
-      value: 'R$ 3.240',
-      change: '+15%',
-      changeType: 'positive',
-      icon: DollarSign,
-      color: 'from-orange-500 to-orange-600'
-    }
-  ];
+  const [stats, setStats] = useState({
+    todayAppointments: 0,
+    activeClients: 0,
+    attendanceRate: 0,
+    expectedRevenue: 0,
+    confirmedToday: 0,
+    completedToday: 0,
+    cancelledToday: 0
+  });
+  
+  const [recentAppointments, setRecentAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const recentAppointments = [
-    {
-      id: 1,
-      client: 'Maria Silva',
-      service: 'Corte + Escova',
-      time: '09:00',
-      status: 'confirmed',
-      professional: 'Ana Costa'
-    },
-    {
-      id: 2,
-      client: 'João Santos',
-      service: 'Barba + Cabelo',
-      time: '10:30',
-      status: 'pending',
-      professional: 'Carlos Souza'
-    },
-    {
-      id: 3,
-      client: 'Isabella Oliveira',
-      service: 'Manicure',
-      time: '14:00',
-      status: 'confirmed',
-      professional: 'Fernanda Lima'
-    },
-    {
-      id: 4,
-      client: 'Pedro Almeida',
-      service: 'Massagem Relaxante',
-      time: '16:00',
-      status: 'completed',
-      professional: 'Ricardo Mendes'
+  useEffect(() => {
+    if (user) {
+      loadDashboardData();
     }
-  ];
+  }, [user]);
+
+  const loadDashboardData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Carregar agendamentos de hoje
+      const { data: todayAppointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          clients (name, email, phone),
+          services (name, price, duration),
+          professionals (name)
+        `)
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('time');
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Carregar total de clientes ativos
+      const { data: clients, error: clientsError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (clientsError) throw clientsError;
+
+      // Calcular estatísticas
+      const appointments = todayAppointments || [];
+      const confirmedCount = appointments.filter(apt => apt.status === 'confirmed').length;
+      const completedCount = appointments.filter(apt => apt.status === 'completed').length;
+      const cancelledCount = appointments.filter(apt => apt.status === 'cancelled').length;
+      
+      // Faturamento previsto (excluindo cancelados)
+      const revenue = appointments
+        .filter(apt => apt.status !== 'cancelled')
+        .reduce((sum, apt) => sum + (apt.services?.price || 0), 0);
+
+      // Taxa de comparecimento (baseada nos concluídos vs agendados)
+      const totalScheduled = appointments.filter(apt => apt.status !== 'cancelled').length;
+      const attendanceRate = totalScheduled > 0 ? Math.round((completedCount / totalScheduled) * 100) : 0;
+
+      setStats({
+        todayAppointments: appointments.length,
+        activeClients: clients?.length || 0,
+        attendanceRate,
+        expectedRevenue: revenue,
+        confirmedToday: confirmedCount,
+        completedToday: completedCount,
+        cancelledToday: cancelledCount
+      });
+
+      // Formatar agendamentos recentes para exibição
+      const formattedAppointments = appointments.slice(0, 4).map(apt => ({
+        id: apt.id,
+        client: apt.clients?.name || 'Cliente não encontrado',
+        service: apt.services?.name || 'Serviço não encontrado',
+        time: apt.time,
+        status: apt.status,
+        professional: apt.professionals?.name || 'Profissional não encontrado'
+      }));
+
+      setRecentAppointments(formattedAppointments);
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      confirmed: { label: 'Confirmado', variant: 'default' as const, color: 'bg-green-100 text-green-800' },
-      pending: { label: 'Pendente', variant: 'secondary' as const, color: 'bg-yellow-100 text-yellow-800' },
-      completed: { label: 'Concluído', variant: 'outline' as const, color: 'bg-blue-100 text-blue-800' }
+      confirmed: { label: 'Confirmado', color: 'bg-green-100 text-green-800 border-green-200' },
+      scheduled: { label: 'Agendado', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+      completed: { label: 'Concluído', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+      cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-200' }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
     return (
       <Badge className={config.color}>
         {config.label}
@@ -110,47 +138,137 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         break;
       case 'check-in':
         console.log('Opening check-in functionality');
-        alert('Funcionalidade de Check-in:\n\n✅ Confirmar presença de clientes\n✅ Atualizar status automaticamente\n✅ Registrar chegada antecipada/atrasada\n\nEm breve será implementada!');
+        if (onNavigate) {
+          onNavigate('checkin');
+        }
         break;
       case 'reports':
         console.log('Opening reports');
-        alert('Relatórios Disponíveis:\n\n📊 Agendamentos por período\n📈 Taxa de comparecimento\n💰 Faturamento\n📋 Relatório de cancelamentos\n📑 Exportação PDF/Excel\n\nEm desenvolvimento!');
+        if (onNavigate) {
+          onNavigate('reports');
+        }
         break;
       default:
         console.log('Unknown action:', action);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Visão geral do seu negócio hoje</p>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Visão geral do seu negócio hoje</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={() => onNavigate?.('calendar')}
+            className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Nova Agenda
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="group hover:shadow-lg transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {stat.title}
-              </CardTitle>
-              <div className={`w-8 h-8 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <stat.icon className="w-4 h-4 text-white" />
+        <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Agendamentos Hoje
+            </CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Calendar className="w-4 h-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-800 mb-1">
+              {stats.todayAppointments}
+            </div>
+            <div className="flex items-center text-xs text-gray-500">
+              <div className="flex items-center gap-4">
+                <span className="text-green-600">{stats.confirmedToday} confirmados</span>
+                <span className="text-purple-600">{stats.completedToday} concluídos</span>
+                {stats.cancelledToday > 0 && (
+                  <span className="text-red-600">{stats.cancelledToday} cancelados</span>
+                )}
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-800 mb-1">
-                {stat.value}
-              </div>
-              <p className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                {stat.change} em relação ao mês anterior
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Clientes Ativos
+            </CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Users className="w-4 h-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-800 mb-1">
+              {stats.activeClients}
+            </div>
+            <p className="text-xs text-green-600 flex items-center">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Base de clientes cadastrados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Taxa de Comparecimento
+            </CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CheckCircle className="w-4 h-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-800 mb-1">
+              {stats.attendanceRate}%
+            </div>
+            <p className="text-xs text-purple-600 flex items-center">
+              <Star className="w-3 h-3 mr-1" />
+              Baseado nos agendamentos concluídos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-orange-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Faturamento Previsto
+            </CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <DollarSign className="w-4 h-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-800 mb-1">
+              R$ {stats.expectedRevenue.toFixed(2)}
+            </div>
+            <p className="text-xs text-orange-600 flex items-center">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              Excluindo cancelamentos
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Appointments */}
@@ -175,33 +293,47 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {appointment.client.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-800">{appointment.client}</p>
-                    <p className="text-sm text-gray-500">{appointment.service}</p>
-                    <p className="text-xs text-gray-400">com {appointment.professional}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {appointment.time}
+          {recentAppointments.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">Nenhum agendamento para hoje</p>
+              <Button 
+                onClick={() => onNavigate?.('calendar')}
+                className="bg-gradient-to-r from-blue-500 to-green-500"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Criar Primeiro Agendamento
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentAppointments.map((appointment) => (
+                <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium text-sm">
+                        {appointment.client.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">{appointment.client}</p>
+                      <p className="text-sm text-gray-500">{appointment.service}</p>
+                      <p className="text-xs text-gray-400">com {appointment.professional}</p>
                     </div>
                   </div>
-                  {getStatusBadge(appointment.status)}
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {appointment.time}
+                      </div>
+                    </div>
+                    {getStatusBadge(appointment.status)}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -211,39 +343,42 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
           <CardTitle className="text-xl font-bold text-gray-800">
             Ações Rápidas
           </CardTitle>
+          <CardDescription>
+            Acesse rapidamente as principais funcionalidades do sistema
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 h-16 flex flex-col"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 h-20 flex flex-col"
               onClick={() => handleQuickAction('new-appointment')}
             >
-              <Calendar className="w-5 h-5 mb-1" />
-              <span className="text-sm">Novo Agendamento</span>
+              <Calendar className="w-6 h-6 mb-2" />
+              <span className="text-sm font-medium">Novo Agendamento</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex flex-col"
+              className="h-20 flex flex-col hover:bg-green-50 border-green-200"
               onClick={() => handleQuickAction('new-client')}
             >
-              <Users className="w-5 h-5 mb-1" />
-              <span className="text-sm">Cadastrar Cliente</span>
+              <Users className="w-6 h-6 mb-2 text-green-600" />
+              <span className="text-sm font-medium">Cadastrar Cliente</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex flex-col"
+              className="h-20 flex flex-col hover:bg-purple-50 border-purple-200"
               onClick={() => handleQuickAction('check-in')}
             >
-              <CheckCircle className="w-5 h-5 mb-1" />
-              <span className="text-sm">Check-in</span>
+              <CheckCircle className="w-6 h-6 mb-2 text-purple-600" />
+              <span className="text-sm font-medium">Check-in</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-16 flex flex-col"
+              className="h-20 flex flex-col hover:bg-orange-50 border-orange-200"
               onClick={() => handleQuickAction('reports')}
             >
-              <TrendingUp className="w-5 h-5 mb-1" />
-              <span className="text-sm">Relatórios</span>
+              <TrendingUp className="w-6 h-6 mb-2 text-orange-600" />
+              <span className="text-sm font-medium">Relatórios</span>
             </Button>
           </div>
         </CardContent>

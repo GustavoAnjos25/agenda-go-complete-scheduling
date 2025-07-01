@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import TimeSlotSelector from './TimeSlotSelector';
 import PhoneInput from './PhoneInput';
+import ServiceInfoDisplay from './ServiceInfoDisplay';
 
 interface NewAppointmentModalWithDBProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   const [services, setServices] = useState([]);
   const [professionals, setProfessionals] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
+  const [selectedServiceInfo, setSelectedServiceInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -72,6 +74,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         time: '',
         notes: ''
       });
+      setSelectedServiceInfo(null);
     }
   }, [editingAppointment, isOpen]);
 
@@ -82,6 +85,16 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
       setFilteredServices(services);
     }
   }, [formData.professional, services]);
+
+  // Atualizar informações do serviço quando selecionado
+  useEffect(() => {
+    if (formData.service) {
+      const service = filteredServices.find(s => s.id === formData.service);
+      setSelectedServiceInfo(service);
+    } else {
+      setSelectedServiceInfo(null);
+    }
+  }, [formData.service, filteredServices]);
 
   const loadServices = async () => {
     try {
@@ -277,6 +290,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         time: '',
         notes: ''
       });
+      setSelectedServiceInfo(null);
       
       onSave();
       onClose();
@@ -382,6 +396,15 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                 </Select>
               </div>
             </div>
+
+            {/* Informações do Serviço Selecionado */}
+            {selectedServiceInfo && (
+              <ServiceInfoDisplay
+                serviceName={selectedServiceInfo.name}
+                duration={selectedServiceInfo.duration}
+                price={selectedServiceInfo.price}
+              />
+            )}
 
             <div>
               <Label htmlFor="date">Data*</Label>
