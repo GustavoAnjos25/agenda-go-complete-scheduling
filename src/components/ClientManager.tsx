@@ -35,13 +35,28 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          appointments!inner(id, status)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setClients(data || []);
+
+      // Calcular visitas baseado nos agendamentos
+      const clientsWithVisits = (data || []).map(client => {
+        const completedAppointments = client.appointments?.filter(apt => apt.status === 'completed') || [];
+        return {
+          ...client,
+          total_visits: completedAppointments.length,
+          total_appointments: client.appointments?.length || 0
+        };
+      });
+
+      setClients(clientsWithVisits);
     } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
       toast({
         title: "Erro ao carregar clientes",
         description: "Tente novamente",
@@ -61,10 +76,13 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
   const getTagColor = (tag: string) => {
     const colors = {
       'VIP': 'bg-purple-100 text-purple-800',
-      'Fidelizado': 'bg-green-100 text-green-800',
+      'Fidelizada': 'bg-green-100 text-green-800',
       'Novo': 'bg-blue-100 text-blue-800',
       'Regular': 'bg-gray-100 text-gray-800',
-      'Indicador': 'bg-orange-100 text-orange-800'
+      'Indicadora': 'bg-orange-100 text-orange-800',
+      'Pontual': 'bg-teal-100 text-teal-800',
+      'Cancelou Recentemente': 'bg-red-100 text-red-800',
+      'Pré-Pagamento': 'bg-yellow-100 text-yellow-800'
     };
     return colors[tag as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -275,6 +293,9 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
                         ))}
                         <Badge variant="outline" className="bg-blue-50 text-blue-700">
                           {client.total_visits || 0} visitas
+                        </Badge>
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                          {client.total_appointments || 0} total
                         </Badge>
                       </div>
                     </div>

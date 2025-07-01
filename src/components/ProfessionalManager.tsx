@@ -88,6 +88,45 @@ const ProfessionalManager = () => {
     }
   };
 
+  const loadProfessionalAvailability = async (professionalId) => {
+    try {
+      const { data, error } = await supabase
+        .from('professional_availability')
+        .select('*')
+        .eq('professional_id', professionalId);
+
+      if (error) throw error;
+
+      const availability = {
+        monday: { active: false, start: '08:00', end: '18:00' },
+        tuesday: { active: false, start: '08:00', end: '18:00' },
+        wednesday: { active: false, start: '08:00', end: '18:00' },
+        thursday: { active: false, start: '08:00', end: '18:00' },
+        friday: { active: false, start: '08:00', end: '18:00' },
+        saturday: { active: false, start: '08:00', end: '12:00' },
+        sunday: { active: false, start: '08:00', end: '12:00' }
+      };
+
+      const dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+      data?.forEach(record => {
+        const dayName = dayMapping[record.day_of_week];
+        if (dayName && availability[dayName]) {
+          availability[dayName] = {
+            active: record.is_available,
+            start: record.start_time,
+            end: record.end_time
+          };
+        }
+      });
+
+      return availability;
+    } catch (error) {
+      console.error('Erro ao carregar disponibilidade:', error);
+      return formData.availability;
+    }
+  };
+
   const handleSaveProfessional = async () => {
     if (!formData.name || !formData.email) {
       toast({
@@ -129,23 +168,33 @@ const ProfessionalManager = () => {
         professionalId = data.id;
       }
 
-      // Salvar disponibilidade
+      // Salvar disponibilidade - remover todas existentes primeiro
       await supabase
         .from('professional_availability')
         .delete()
         .eq('professional_id', professionalId);
 
+      // Inserir novas disponibilidades
       const availabilityData = [];
-      Object.entries(formData.availability).forEach(([day, config], index) => {
-        if (config.active) {
-          availabilityData.push({
-            professional_id: professionalId,
-            day_of_week: index === 6 ? 0 : index + 1, // Domingo = 0
-            start_time: config.start,
-            end_time: config.end,
-            is_available: true
-          });
-        }
+      const dayMapping = {
+        'sunday': 0,
+        'monday': 1,
+        'tuesday': 2,
+        'wednesday': 3,
+        'thursday': 4,
+        'friday': 5,
+        'saturday': 6
+      };
+
+      Object.entries(formData.availability).forEach(([day, config]) => {
+        const dayOfWeek = dayMapping[day];
+        availabilityData.push({
+          professional_id: professionalId,
+          day_of_week: dayOfWeek,
+          start_time: config.start,
+          end_time: config.end,
+          is_available: config.active
+        });
       });
 
       if (availabilityData.length > 0) {
@@ -156,7 +205,7 @@ const ProfessionalManager = () => {
         if (error) throw error;
       }
 
-      // Salvar serviços
+      // Salvar serviços - remover todos existentes primeiro
       await supabase
         .from('professional_services')
         .delete()
@@ -184,6 +233,7 @@ const ProfessionalManager = () => {
       resetForm();
       loadProfessionals();
     } catch (error) {
+      console.error('Erro ao salvar profissional:', error);
       toast({
         title: "Erro ao salvar",
         description: "Tente novamente",
@@ -214,15 +264,19 @@ const ProfessionalManager = () => {
     setSelectedProfessional(null);
   };
 
-  const handleEditProfessional = (professional) => {
+  const handleEditProfessional = async (professional) => {
     setSelectedProfessional(professional);
+    
+    // Carregar disponibilidade do profissional
+    const availability = await loadProfessionalAvailability(professional.id);
+    
     setFormData({
       name: professional.name,
       email: professional.email || '',
       phone: professional.phone || '',
       specialties: professional.specialties || [],
       services: professional.professional_services?.map(ps => ps.services.id) || [],
-      availability: formData.availability // Keep default for now
+      availability: availability
     });
     setIsDialogOpen(true);
   };

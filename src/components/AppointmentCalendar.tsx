@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -182,14 +183,14 @@ const AppointmentCalendar = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Agenda</h1>
           <p className="text-gray-600">Gerencie todos os agendamentos</p>
         </div>
         
         <Button 
-          className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+          className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 w-full sm:w-auto"
           onClick={handleNewAppointment}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -200,7 +201,7 @@ const AppointmentCalendar = () => {
       {/* Calendar Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
                 <ChevronLeft className="w-4 h-4" />
@@ -239,7 +240,7 @@ const AppointmentCalendar = () => {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -354,7 +355,7 @@ const AppointmentCalendar = () => {
                       className={`p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer ${getStatusColor(appointment.status)}`}
                       onClick={() => handleAppointmentClick(appointment)}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
                             <span className="text-white font-medium text-sm">
@@ -368,13 +369,13 @@ const AppointmentCalendar = () => {
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="flex items-center justify-end space-x-2 mb-2">
+                        <div className="flex flex-col sm:text-right">
+                          <div className="flex items-center justify-start sm:justify-end space-x-2 mb-2">
                             <Clock className="w-4 h-4 text-gray-500" />
                             <span className="font-medium">{appointment.time}</span>
                             <span className="text-sm text-gray-500">({appointment.duration}min)</span>
                           </div>
-                          <div className="flex items-center justify-end space-x-2">
+                          <div className="flex items-center justify-start sm:justify-end space-x-2">
                             <Badge variant="outline" className={getStatusColor(appointment.status)}>
                               {getStatusLabel(appointment.status)}
                             </Badge>

@@ -32,6 +32,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
   
   const [services, setServices] = useState([]);
   const [professionals, setProfessionals] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -43,6 +44,14 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
     }
   }, [user, isOpen]);
 
+  useEffect(() => {
+    if (formData.professional) {
+      loadServicesByProfessional(formData.professional);
+    } else {
+      setFilteredServices(services);
+    }
+  }, [formData.professional, services]);
+
   const loadServices = async () => {
     try {
       const { data, error } = await supabase
@@ -52,6 +61,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
 
       if (error) throw error;
       setServices(data || []);
+      setFilteredServices(data || []);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
     }
@@ -70,6 +80,30 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
       setProfessionals(data || []);
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error);
+    }
+  };
+
+  const loadServicesByProfessional = async (professionalId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('professional_services')
+        .select(`
+          services (*)
+        `)
+        .eq('professional_id', professionalId);
+
+      if (error) throw error;
+      
+      const professionalServices = data?.map(ps => ps.services).filter(Boolean) || [];
+      setFilteredServices(professionalServices);
+      
+      // Limpar serviço selecionado se não estiver mais disponível
+      if (formData.service && !professionalServices.find(s => s.id === formData.service)) {
+        setFormData(prev => ({ ...prev, service: '' }));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar serviços do profissional:', error);
+      setFilteredServices([]);
     }
   };
 
@@ -113,6 +147,17 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
 
       if (existingClients && existingClients.length > 0) {
         clientId = existingClients[0].id;
+        
+        // Atualizar contador de visitas
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ 
+            total_visits: await getCurrentVisitCount(clientId) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', clientId);
+
+        if (updateError) console.error('Erro ao atualizar visitas:', updateError);
       } else {
         // Criar novo cliente
         const { data: newClient, error: clientError } = await supabase
@@ -122,7 +167,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
             email: formData.clientEmail || null,
             phone: formData.clientPhone || null,
             user_id: user.id,
-            total_visits: 0
+            total_visits: 1
           }])
           .select()
           .single();
@@ -131,16 +176,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
         clientId = newClient.id;
       }
 
-      // Buscar preço do serviço
-      const { data: service, error: serviceError } = await supabase
-        .from('services')
-        .select('price')
-        .eq('id', formData.service)
-        .single();
-
-      if (serviceError) throw serviceError;
-
-      // Criar agendamento
+      // Criar agendamento (removido o total_price que não existe na tabela)
       const { error: appointmentError } = await supabase
         .from('appointments')
         .insert([{
@@ -150,7 +186,6 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
           date: formData.date,
           time: formData.time,
           notes: formData.notes || null,
-          total_price: service.price,
           status: 'scheduled',
           user_id: user.id
         }]);
@@ -185,6 +220,22 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getCurrentVisitCount = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('status', 'completed');
+
+      if (error) throw error;
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Erro ao contar visitas:', error);
+      return 0;
     }
   };
 
@@ -248,24 +299,8 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="service">Serviço*</Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData({...formData, service: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o serviço" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        {service.name} - R$ {service.price}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <Label htmlFor="professional">Profissional*</Label>
-                <Select value={formData.professional} onValueChange={(value) => setFormData({...formData, professional: value})}>
+                <Select value={formData.professional} onValueChange={(value) => setFormData({...formData, professional: value, service: ''})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o profissional" />
                   </SelectTrigger>
@@ -273,6 +308,22 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
                     {professionals.map((professional) => (
                       <SelectItem key={professional.id} value={professional.id}>
                         {professional.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="service">Serviço*</Label>
+                <Select value={formData.service} onValueChange={(value) => setFormData({...formData, service: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o serviço" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredServices.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name} - R$ {service.price}
                       </SelectItem>
                     ))}
                   </SelectContent>
