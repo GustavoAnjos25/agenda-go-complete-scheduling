@@ -11,7 +11,7 @@ interface ClientStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
   client: any;
-  onUpdateStatus: (clientId: number, newTags: string[]) => void;
+  onUpdateStatus: (clientId: string, newTags: string[]) => void;
 }
 
 const ClientStatusModal = ({ isOpen, onClose, client, onUpdateStatus }: ClientStatusModalProps) => {
