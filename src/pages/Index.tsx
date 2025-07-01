@@ -12,6 +12,8 @@ import AppointmentCalendar from '@/components/AppointmentCalendar';
 import Reports from '@/components/Reports';
 import CheckIn from '@/components/CheckIn';
 import ServicesAdmin from '@/components/ServicesAdmin';
+import ProfessionalManager from '@/components/ProfessionalManager';
+import AdminPanel from '@/components/AdminPanel';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
@@ -41,6 +43,12 @@ const Index = () => {
           </TabsContent>
           <TabsContent value="services">
             <ServicesAdmin />
+          </TabsContent>
+          <TabsContent value="professionals">
+            <ProfessionalManager />
+          </TabsContent>
+          <TabsContent value="admin">
+            <AdminPanel />
           </TabsContent>
         </Tabs>
       </main>

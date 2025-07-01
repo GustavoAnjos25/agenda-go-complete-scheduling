@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, BarChart3, LogOut, User, CheckSquare, Settings, FileText } from 'lucide-react';
+import { Calendar, Users, BarChart3, LogOut, User, CheckSquare, Settings, FileText, Shield, UserCog } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -43,6 +43,8 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
     { id: 'checkin', label: 'Check-in', icon: CheckSquare },
     { id: 'reports', label: 'Relatórios', icon: FileText },
     { id: 'services', label: 'Serviços', icon: Settings },
+    { id: 'professionals', label: 'Profissionais', icon: UserCog },
+    { id: 'admin', label: 'Admin', icon: Shield },
   ];
 
   return (

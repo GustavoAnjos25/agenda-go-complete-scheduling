@@ -1,14 +1,15 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Users, Search, Plus, Phone, Mail, Calendar, MessageSquare, Settings } from 'lucide-react';
+import { Users, Search, Phone, Mail, Calendar, MessageSquare, Settings } from 'lucide-react';
 import ClientStatusModal from './ClientStatusModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ClientManagerProps {
   onNavigate?: (tab: string) => void;
@@ -16,128 +17,117 @@ interface ClientManagerProps {
 
 const ClientManager = ({ onNavigate }: ClientManagerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [newClient, setNewClient] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    notes: ''
-  });
-  
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      name: 'Maria Silva',
-      email: 'maria.silva@email.com',
-      phone: '(11) 99999-9999',
-      lastVisit: '2024-01-15',
-      totalVisits: 8,
-      tags: ['VIP', 'Fidelizada'],
-      preferredServices: ['Corte', 'Escova'],
-      notes: 'Prefere agendamentos pela manhã'
-    },
-    {
-      id: 2,
-      name: 'João Santos',
-      email: 'joao.santos@email.com',
-      phone: '(11) 88888-8888',
-      lastVisit: '2024-01-10',
-      totalVisits: 3,
-      tags: ['Novo'],
-      preferredServices: ['Barba', 'Cabelo'],
-      notes: 'Cliente pontual, sempre confirma presença'
-    },
-    {
-      id: 3,
-      name: 'Isabella Oliveira',
-      email: 'isabella.oliveira@email.com',
-      phone: '(11) 77777-7777',
-      lastVisit: '2024-01-20',
-      totalVisits: 15,
-      tags: ['VIP', 'Indicadora'],
-      preferredServices: ['Manicure', 'Pedicure'],
-      notes: 'Sempre traz amigas, excelente cliente'
-    },
-    {
-      id: 4,
-      name: 'Pedro Almeida',
-      email: 'pedro.almeida@email.com',
-      phone: '(11) 66666-6666',
-      lastVisit: '2024-01-12',
-      totalVisits: 5,
-      tags: ['Regular'],
-      preferredServices: ['Massagem'],
-      notes: 'Prefere horários após 16h'
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      loadClients();
     }
-  ]);
+  }, [user]);
+
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      toast({
+        title: "Erro ao carregar clientes",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
+    (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (client.phone && client.phone.includes(searchTerm))
   );
 
   const getTagColor = (tag: string) => {
     const colors = {
       'VIP': 'bg-purple-100 text-purple-800',
-      'Fidelizada': 'bg-green-100 text-green-800',
+      'Fidelizado': 'bg-green-100 text-green-800',
       'Novo': 'bg-blue-100 text-blue-800',
       'Regular': 'bg-gray-100 text-gray-800',
-      'Indicadora': 'bg-orange-100 text-orange-800'
+      'Indicador': 'bg-orange-100 text-orange-800'
     };
     return colors[tag as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const handleSaveClient = () => {
-    if (!newClient.name || !newClient.email || !newClient.phone) {
-      alert('Por favor, preencha os campos obrigatórios (Nome, Email e Telefone)');
-      return;
-    }
-    
-    const clientToAdd = {
-      id: Date.now(),
-      ...newClient,
-      lastVisit: new Date().toISOString().split('T')[0],
-      totalVisits: 0,
-      tags: ['Novo'],
-      preferredServices: []
-    };
-    
-    setClients(prev => [...prev, clientToAdd]);
-    alert(`Cliente ${newClient.name} cadastrado com sucesso!`);
-    setNewClient({ name: '', email: '', phone: '', notes: '' });
-    setIsDialogOpen(false);
   };
 
   const handleClientAction = (action: string, client: any) => {
     console.log('Client action:', action, client);
     switch (action) {
       case 'message':
-        alert(`Enviando mensagem para ${client.name}...\n\n📱 WhatsApp: ${client.phone}\n📧 Email: ${client.email}\n\nFuncionalidade será implementada em breve!`);
+        toast({
+          title: "Funcionalidade em desenvolvimento",
+          description: "Integração com WhatsApp será implementada em breve",
+        });
         break;
       case 'schedule':
         onNavigate?.('calendar');
-        alert(`Redirecionando para agenda para ${client.name}...`);
         break;
       case 'status':
-        console.log('Opening status modal for:', client);
         setSelectedClient(client);
         setIsStatusModalOpen(true);
         break;
     }
   };
 
-  const handleUpdateClientStatus = (clientId: number, newTags: string[]) => {
-    console.log('Updating client status:', clientId, newTags);
-    setClients(prev => prev.map(client => 
-      client.id === clientId 
-        ? { ...client, tags: newTags }
-        : client
-    ));
-    alert('Status do cliente atualizado com sucesso!');
+  const handleUpdateClientStatus = async (clientId: string, newTags: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ tags: newTags })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status atualizado",
+        description: "Status do cliente foi atualizado com sucesso",
+      });
+
+      loadClients();
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
   };
+
+  const totalClients = clients.length;
+  const vipClients = clients.filter(c => c.tags?.includes('VIP')).length;
+  const newClients = clients.filter(c => c.tags?.includes('Novo')).length;
+  const averageVisits = clients.length > 0 
+    ? Math.round(clients.reduce((acc, c) => acc + (c.total_visits || 0), 0) / clients.length)
+    : 0;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <p>Carregando clientes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -145,77 +135,10 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Gestão de Clientes</h1>
           <p className="text-gray-600">Gerencie todos os seus clientes em um só lugar</p>
+          <p className="text-sm text-blue-600 mt-1">
+            ℹ️ Clientes são criados automaticamente no primeiro agendamento
+          </p>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
-              <DialogDescription>
-                Preencha as informações do cliente para começar o cadastro.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Nome*</Label>
-                <Input 
-                  id="name" 
-                  className="col-span-3" 
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">Email*</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  className="col-span-3" 
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone" className="text-right">Telefone*</Label>
-                <Input 
-                  id="phone" 
-                  className="col-span-3" 
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="notes" className="text-right">Observações</Label>
-                <Textarea 
-                  id="notes" 
-                  className="col-span-3" 
-                  value={newClient.notes}
-                  onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                className="bg-gradient-to-r from-blue-500 to-green-500"
-                onClick={handleSaveClient}
-              >
-                Salvar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Search Bar */}
@@ -241,7 +164,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
               <Users className="h-4 w-4 text-blue-600" />
               <div className="ml-2">
                 <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
-                <p className="text-2xl font-bold text-gray-800">{clients.length}</p>
+                <p className="text-2xl font-bold text-gray-800">{totalClients}</p>
               </div>
             </div>
           </CardContent>
@@ -253,9 +176,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
               <Badge className="bg-purple-100 text-purple-800 mr-2">VIP</Badge>
               <div>
                 <p className="text-sm font-medium text-gray-600">Clientes VIP</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {clients.filter(c => c.tags.includes('VIP')).length}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{vipClients}</p>
               </div>
             </div>
           </CardContent>
@@ -267,9 +188,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
               <Badge className="bg-blue-100 text-blue-800 mr-2">Novos</Badge>
               <div>
                 <p className="text-sm font-medium text-gray-600">Novos Clientes</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {clients.filter(c => c.tags.includes('Novo')).length}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{newClients}</p>
               </div>
             </div>
           </CardContent>
@@ -281,9 +200,7 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
               <Calendar className="h-4 w-4 text-green-600" />
               <div className="ml-2">
                 <p className="text-sm font-medium text-gray-600">Média de Visitas</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {Math.round(clients.reduce((acc, c) => acc + c.totalVisits, 0) / clients.length)}
-                </p>
+                <p className="text-2xl font-bold text-gray-800">{averageVisits}</p>
               </div>
             </div>
           </CardContent>
@@ -303,41 +220,66 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredClients.map((client) => (
-              <div key={client.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
-                      {client.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-medium text-gray-800">{client.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <Mail className="w-3 h-3 mr-1" />
-                        {client.email}
-                      </span>
-                      <span className="flex items-center">
-                        <Phone className="w-3 h-3 mr-1" />
-                        {client.phone}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 mt-2">
-                      {client.tags.map((tag) => (
-                        <Badge key={tag} className={getTagColor(tag)}>
-                          {tag}
+            {filteredClients.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm 
+                    ? 'Tente buscar com outros termos'
+                    : 'Os clientes são criados automaticamente no primeiro agendamento'
+                  }
+                </p>
+                {!searchTerm && (
+                  <Button 
+                    onClick={() => onNavigate?.('calendar')}
+                    className="bg-gradient-to-r from-blue-500 to-green-500"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Criar Primeiro Agendamento
+                  </Button>
+                )}
+              </div>
+            ) : (
+              filteredClients.map((client) => (
+                <div key={client.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
+                        {client.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium text-gray-800">{client.name}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        {client.email && (
+                          <span className="flex items-center">
+                            <Mail className="w-3 h-3 mr-1" />
+                            {client.email}
+                          </span>
+                        )}
+                        {client.phone && (
+                          <span className="flex items-center">
+                            <Phone className="w-3 h-3 mr-1" />
+                            {client.phone}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2 mt-2">
+                        {client.tags?.map((tag) => (
+                          <Badge key={tag} className={getTagColor(tag)}>
+                            {tag}
+                          </Badge>
+                        ))}
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          {client.total_visits || 0} visitas
                         </Badge>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <div className="text-right text-sm">
-                    <p className="text-gray-600">{client.totalVisits} visitas</p>
-                    <p className="text-gray-500">Última: {client.lastVisit}</p>
-                  </div>
+                  
                   <div className="flex space-x-2">
                     <Button 
                       variant="outline" 
@@ -362,8 +304,8 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
                     </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
