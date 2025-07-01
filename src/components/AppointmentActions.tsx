@@ -23,11 +23,13 @@ interface AppointmentActionsProps {
   onEdit: () => void;
 }
 
+type AppointmentStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+
 const AppointmentActions = ({ appointmentId, currentStatus, onStatusChange, onEdit }: AppointmentActionsProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const updateAppointmentStatus = async (newStatus: string) => {
+  const updateAppointmentStatus = async (newStatus: AppointmentStatus) => {
     setLoading(true);
     try {
       const { error } = await supabase
