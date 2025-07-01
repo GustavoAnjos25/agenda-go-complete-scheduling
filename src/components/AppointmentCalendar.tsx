@@ -11,13 +11,13 @@ import AppointmentActions from './AppointmentActions';
 
 const AppointmentCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode('day');
-  const [isNewAppointmentOpen, setIsNewAppointmentOpen(false);
-  const [appointments, setAppointments([]);
-  const [loading, setLoading(false);
+  const [viewMode, setViewMode] = useState('day');
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [editingAppointment, setEditingAppointment(null);
+  const [editingAppointment, setEditingAppointment] = useState(null);
 
   useEffect(() => {
     if (user) {
