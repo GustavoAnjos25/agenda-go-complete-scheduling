@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,15 +7,17 @@ import NewAppointmentModalWithDB from './NewAppointmentModalWithDB';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import AppointmentActions from './AppointmentActions';
 
 const AppointmentCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day');
-  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode('day');
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen(false);
+  const [appointments, setAppointments([]);
+  const [loading, setLoading(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [editingAppointment, setEditingAppointment(null);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +73,48 @@ const AppointmentCalendar = () => {
     }
   };
 
+  const handleEditAppointment = async (appointment: any) => {
+    try {
+      // Buscar dados completos do agendamento para edição
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          clients (name, email, phone),
+          services (id, name),
+          professionals (id, name)
+        `)
+        .eq('id', appointment.id)
+        .single();
+
+      if (error) throw error;
+
+      const appointmentData = {
+        ...data,
+        client: data.clients?.name,
+        clientEmail: data.clients?.email,
+        clientPhone: data.clients?.phone,
+        service_id: data.services?.id,
+        professional_id: data.professionals?.id
+      };
+
+      setEditingAppointment(appointmentData);
+      setIsNewAppointmentOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar dados do agendamento:', error);
+      toast({
+        title: "Erro ao carregar agendamento",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsNewAppointmentOpen(false);
+    setEditingAppointment(null);
+  };
+
   const timeSlots = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
@@ -118,64 +161,14 @@ const AppointmentCalendar = () => {
   };
 
   const handleNewAppointment = () => {
+    setEditingAppointment(null);
     setIsNewAppointmentOpen(true);
-  };
-
-  const handleAppointmentClick = async (appointment: any) => {
-    const options = ['Confirmar', 'Completar', 'Cancelar', 'Fechar'];
-    const choice = prompt(`Agendamento: ${appointment.client}\nServiço: ${appointment.service}\nStatus atual: ${getStatusLabel(appointment.status)}\n\nEscolha uma opção:\n1 - Confirmar\n2 - Completar\n3 - Cancelar\n4 - Fechar\n\nDigite o número da opção:`);
-    
-    let newStatus = appointment.status;
-    switch(choice) {
-      case '1':
-        newStatus = 'confirmed';
-        break;
-      case '2':
-        newStatus = 'completed';
-        break;
-      case '3':
-        if (confirm(`Tem certeza que deseja cancelar o agendamento de ${appointment.client}?`)) {
-          newStatus = 'cancelled';
-        } else {
-          return;
-        }
-        break;
-      case '4':
-        return;
-      default:
-        return;
-    }
-
-    if (newStatus !== appointment.status) {
-      try {
-        const { error } = await supabase
-          .from('appointments')
-          .update({ status: newStatus })
-          .eq('id', appointment.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Status atualizado",
-          description: `Agendamento ${getStatusLabel(newStatus).toLowerCase()}`,
-        });
-
-        loadAppointments();
-      } catch (error) {
-        toast({
-          title: "Erro ao atualizar status",
-          description: "Tente novamente",
-          variant: "destructive",
-        });
-      }
-    }
   };
 
   const handleTimeSlotClick = (time: string) => {
     const hasAppointment = appointments.some(apt => apt.time === time);
     if (hasAppointment) {
       const appointment = appointments.find(apt => apt.time === time);
-      handleAppointmentClick(appointment);
     } else {
       setIsNewAppointmentOpen(true);
     }
@@ -330,7 +323,7 @@ const AppointmentCalendar = () => {
             <CardHeader>
               <CardTitle className="text-lg">Agendamentos do Dia</CardTitle>
               <CardDescription>
-                Clique em um agendamento para gerenciar ou em um horário vazio para criar novo
+                Gerencie os agendamentos com os botões de ação
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -352,37 +345,48 @@ const AppointmentCalendar = () => {
                   {appointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className={`p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer ${getStatusColor(appointment.status)}`}
-                      onClick={() => handleAppointmentClick(appointment)}
+                      className={`p-4 rounded-lg border-2 hover:shadow-md transition-all ${getStatusColor(appointment.status)}`}
                     >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-medium text-sm">
-                              {appointment.client.split(' ').map(n => n[0]).join('')}
-                            </span>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-medium text-sm">
+                                {appointment.client.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-800">{appointment.client}</h3>
+                              <p className="text-sm text-gray-600">{appointment.service}</p>
+                              <p className="text-xs text-gray-500">com {appointment.professional}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-800">{appointment.client}</h3>
-                            <p className="text-sm text-gray-600">{appointment.service}</p>
-                            <p className="text-xs text-gray-500">com {appointment.professional}</p>
+                          
+                          <div className="flex flex-col sm:text-right">
+                            <div className="flex items-center justify-start sm:justify-end space-x-2 mb-2">
+                              <Clock className="w-4 h-4 text-gray-500" />
+                              <span className="font-medium">{appointment.time}</span>
+                              <span className="text-sm text-gray-500">({appointment.duration}min)</span>
+                            </div>
+                            <div className="flex items-center justify-start sm:justify-end space-x-2">
+                              <Badge variant="outline" className={getStatusColor(appointment.status)}>
+                                {getStatusLabel(appointment.status)}
+                              </Badge>
+                              <span className="font-semibold text-green-600">
+                                R$ {appointment.price?.toFixed(2) || '0.00'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col sm:text-right">
-                          <div className="flex items-center justify-start sm:justify-end space-x-2 mb-2">
-                            <Clock className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{appointment.time}</span>
-                            <span className="text-sm text-gray-500">({appointment.duration}min)</span>
-                          </div>
-                          <div className="flex items-center justify-start sm:justify-end space-x-2">
-                            <Badge variant="outline" className={getStatusColor(appointment.status)}>
-                              {getStatusLabel(appointment.status)}
-                            </Badge>
-                            <span className="font-semibold text-green-600">
-                              R$ {appointment.price?.toFixed(2) || '0.00'}
-                            </span>
-                          </div>
+                        {/* Botões de Ação */}
+                        <div className="border-t pt-3">
+                          <AppointmentActions
+                            appointmentId={appointment.id}
+                            currentStatus={appointment.status}
+                            onStatusChange={loadAppointments}
+                            onEdit={() => handleEditAppointment(appointment)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -396,8 +400,9 @@ const AppointmentCalendar = () => {
 
       <NewAppointmentModalWithDB
         isOpen={isNewAppointmentOpen}
-        onClose={() => setIsNewAppointmentOpen(false)}
+        onClose={handleCloseModal}
         onSave={loadAppointments}
+        editingAppointment={editingAppointment}
       />
     </div>
   );

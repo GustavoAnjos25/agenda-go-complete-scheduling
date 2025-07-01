@@ -6,19 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, Scissors } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import TimeSlotSelector from './TimeSlotSelector';
+import PhoneInput from './PhoneInput';
 
 interface NewAppointmentModalWithDBProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
+  editingAppointment?: any;
 }
 
-const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentModalWithDBProps) => {
+const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment }: NewAppointmentModalWithDBProps) => {
   const [formData, setFormData] = useState({
     clientName: '',
     clientEmail: '',
@@ -43,6 +45,35 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
       loadProfessionals();
     }
   }, [user, isOpen]);
+
+  // Carregar dados para edição
+  useEffect(() => {
+    if (editingAppointment && isOpen) {
+      console.log('Carregando dados para edição:', editingAppointment);
+      setFormData({
+        clientName: editingAppointment.client || '',
+        clientEmail: editingAppointment.clientEmail || '',
+        clientPhone: editingAppointment.clientPhone || '',
+        service: editingAppointment.service_id || '',
+        professional: editingAppointment.professional_id || '',
+        date: editingAppointment.date || '',
+        time: editingAppointment.time || '',
+        notes: editingAppointment.notes || ''
+      });
+    } else if (!editingAppointment && isOpen) {
+      // Resetar form para novo agendamento
+      setFormData({
+        clientName: '',
+        clientEmail: '',
+        clientPhone: '',
+        service: '',
+        professional: '',
+        date: '',
+        time: '',
+        notes: ''
+      });
+    }
+  }, [editingAppointment, isOpen]);
 
   useEffect(() => {
     if (formData.professional) {
@@ -107,11 +138,25 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
     }
   };
 
+  const validatePhone = (phone: string) => {
+    const numbers = phone.replace(/\D/g, '');
+    return numbers.length === 10 || numbers.length === 11;
+  };
+
   const handleSave = async () => {
     if (!formData.clientName || !formData.service || !formData.professional || !formData.date || !formData.time) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.clientPhone && !validatePhone(formData.clientPhone)) {
+      toast({
+        title: "Telefone inválido",
+        description: "Digite um telefone válido no formato (XX) XXXXX-XXXX",
         variant: "destructive",
       });
       return;
@@ -133,57 +178,93 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
 
     setLoading(true);
     try {
-      // Primeiro, criar ou buscar cliente
       let clientId;
       
-      // Verificar se cliente já existe pelo email (se fornecido) ou nome
-      const { data: existingClients, error: searchError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('user_id', user.id)
-        .or(`email.eq.${formData.clientEmail || 'null'},name.eq.${formData.clientName}`);
-
-      if (searchError) throw searchError;
-
-      if (existingClients && existingClients.length > 0) {
-        clientId = existingClients[0].id;
-      } else {
-        // Criar novo cliente - removendo total_visits que não existe na tabela
-        const { data: newClient, error: clientError } = await supabase
+      if (editingAppointment) {
+        // Para edição, usar o cliente existente
+        clientId = editingAppointment.client_id;
+        
+        // Atualizar dados do cliente
+        const { error: updateClientError } = await supabase
           .from('clients')
-          .insert([{
+          .update({
             name: formData.clientName,
             email: formData.clientEmail || null,
             phone: formData.clientPhone || null,
+          })
+          .eq('id', clientId);
+
+        if (updateClientError) throw updateClientError;
+
+        // Atualizar agendamento
+        const { error: updateAppointmentError } = await supabase
+          .from('appointments')
+          .update({
+            service_id: formData.service,
+            professional_id: formData.professional,
+            date: formData.date,
+            time: formData.time,
+            notes: formData.notes || null,
+          })
+          .eq('id', editingAppointment.id);
+
+        if (updateAppointmentError) throw updateAppointmentError;
+
+        toast({
+          title: "Agendamento atualizado!",
+          description: `Agendamento de ${formData.clientName} foi atualizado com sucesso`,
+        });
+      } else {
+        // Para novo agendamento
+        // Verificar se cliente já existe pelo email (se fornecido) ou nome
+        const { data: existingClients, error: searchError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .or(`email.eq.${formData.clientEmail || 'null'},name.eq.${formData.clientName}`);
+
+        if (searchError) throw searchError;
+
+        if (existingClients && existingClients.length > 0) {
+          clientId = existingClients[0].id;
+        } else {
+          // Criar novo cliente
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              name: formData.clientName,
+              email: formData.clientEmail || null,
+              phone: formData.clientPhone || null,
+              user_id: user.id
+            }])
+            .select()
+            .single();
+
+          if (clientError) throw clientError;
+          clientId = newClient.id;
+        }
+
+        // Criar agendamento
+        const { error: appointmentError } = await supabase
+          .from('appointments')
+          .insert([{
+            client_id: clientId,
+            service_id: formData.service,
+            professional_id: formData.professional,
+            date: formData.date,
+            time: formData.time,
+            notes: formData.notes || null,
+            status: 'scheduled',
             user_id: user.id
-          }])
-          .select()
-          .single();
+          }]);
 
-        if (clientError) throw clientError;
-        clientId = newClient.id;
+        if (appointmentError) throw appointmentError;
+
+        toast({
+          title: "Agendamento criado!",
+          description: `Agendamento para ${formData.clientName} foi criado com sucesso`,
+        });
       }
-
-      // Criar agendamento
-      const { error: appointmentError } = await supabase
-        .from('appointments')
-        .insert([{
-          client_id: clientId,
-          service_id: formData.service,
-          professional_id: formData.professional,
-          date: formData.date,
-          time: formData.time,
-          notes: formData.notes || null,
-          status: 'scheduled',
-          user_id: user.id
-        }]);
-
-      if (appointmentError) throw appointmentError;
-
-      toast({
-        title: "Agendamento criado!",
-        description: `Agendamento para ${formData.clientName} foi criado com sucesso`,
-      });
 
       // Reset form
       setFormData({
@@ -200,9 +281,9 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
       onSave();
       onClose();
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
+      console.error('Erro ao salvar agendamento:', error);
       toast({
-        title: "Erro ao criar agendamento",
+        title: "Erro ao salvar agendamento",
         description: error.message || "Tente novamente",
         variant: "destructive",
       });
@@ -220,10 +301,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            Novo Agendamento
+            {editingAppointment ? 'Editar Agendamento' : 'Novo Agendamento'}
           </DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo agendamento
+            {editingAppointment ? 'Edite os dados do agendamento' : 'Preencha os dados para criar um novo agendamento'}
           </DialogDescription>
         </DialogHeader>
         
@@ -254,11 +335,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
                 </div>
                 <div>
                   <Label htmlFor="clientPhone">Telefone</Label>
-                  <Input
+                  <PhoneInput
                     id="clientPhone"
                     value={formData.clientPhone}
-                    onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
-                    placeholder="(11) 99999-9999"
+                    onChange={(value) => setFormData({...formData, clientPhone: value})}
                   />
                 </div>
               </div>
@@ -344,7 +424,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave }: NewAppointmentMo
             disabled={loading}
             className="bg-gradient-to-r from-blue-500 to-green-500"
           >
-            {loading ? "Criando..." : "Criar Agendamento"}
+            {loading ? (editingAppointment ? "Atualizando..." : "Criando...") : (editingAppointment ? "Atualizar Agendamento" : "Criar Agendamento")}
           </Button>
         </div>
       </DialogContent>

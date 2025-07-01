@@ -24,21 +24,21 @@ const TimeSlotSelector = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const generateTimeSlots = (startTime: string, endTime: string, duration: number, bookedSlots: string[]) => {
+  const generateTimeSlots = (startTime: string, endTime: string, duration: number, blockedSlots: string[]) => {
     const slots = [];
     const start = new Date(`2000-01-01T${startTime}`);
     const end = new Date(`2000-01-01T${endTime}`);
     
     while (start < end) {
       const timeString = start.toTimeString().substring(0, 5);
-      const isBooked = bookedSlots.includes(timeString);
       const isPast = isPastTime(timeString);
+      const isBlocked = isTimeBlocked(timeString, duration, blockedSlots);
       
-      if (!isBooked && !isPast) {
+      if (!isPast && !isBlocked) {
         slots.push(timeString);
       }
       
-      start.setMinutes(start.getMinutes() + duration);
+      start.setMinutes(start.getMinutes() + 30); // Intervalos de 30 minutos
     }
     
     return slots;
@@ -55,6 +55,20 @@ const TimeSlotSelector = ({
     return appointmentTime <= now;
   };
 
+  const isTimeBlocked = (proposedTime: string, serviceDuration: number, blockedSlots: string[]) => {
+    const proposedStart = new Date(`2000-01-01T${proposedTime}`);
+    const proposedEnd = new Date(proposedStart.getTime() + serviceDuration * 60000);
+    
+    return blockedSlots.some(blockedTime => {
+      const [time, duration] = blockedTime.split('|');
+      const blockedStart = new Date(`2000-01-01T${time}`);
+      const blockedEnd = new Date(blockedStart.getTime() + parseInt(duration) * 60000);
+      
+      // Verifica se há sobreposição
+      return (proposedStart < blockedEnd && proposedEnd > blockedStart);
+    });
+  };
+
   const loadAvailableSlots = async () => {
     if (!selectedDate || !selectedProfessional || !selectedService) {
       setAvailableSlots([]);
@@ -63,9 +77,9 @@ const TimeSlotSelector = ({
 
     setLoading(true);
     try {
-      // Buscar disponibilidade do profissional para o dia da semana selecionado
+      // Buscar disponibilidade do profissional
       const selectedDateObj = new Date(selectedDate);
-      const dayOfWeek = selectedDateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const dayOfWeek = selectedDateObj.getDay();
       
       console.log('Buscando disponibilidade para:', {
         professional_id: selectedProfessional,
@@ -93,7 +107,6 @@ const TimeSlotSelector = ({
         return;
       }
 
-      // Pegar a primeira disponibilidade (assumindo que há apenas uma por dia)
       const dayAvailability = availability[0];
 
       // Buscar duração do serviço
@@ -110,10 +123,13 @@ const TimeSlotSelector = ({
 
       console.log('Serviço encontrado:', service);
 
-      // Buscar agendamentos já marcados para este profissional nesta data
+      // Buscar agendamentos já marcados com suas durações
       const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
-        .select('time')
+        .select(`
+          time,
+          services (duration)
+        `)
         .eq('professional_id', selectedProfessional)
         .eq('date', selectedDate)
         .neq('status', 'cancelled');
@@ -125,21 +141,25 @@ const TimeSlotSelector = ({
 
       console.log('Agendamentos existentes:', appointments);
 
-      const bookedSlots = appointments?.map(apt => apt.time) || [];
+      // Criar lista de horários bloqueados com duração
+      const blockedSlots = appointments?.map(apt => 
+        `${apt.time}|${apt.services?.duration || 30}`
+      ) || [];
+
       const duration = service?.duration || 30;
 
       console.log('Gerando slots com:', {
         start_time: dayAvailability.start_time,
         end_time: dayAvailability.end_time,
         duration,
-        bookedSlots
+        blockedSlots
       });
 
       const slots = generateTimeSlots(
         dayAvailability.start_time,
         dayAvailability.end_time,
         duration,
-        bookedSlots
+        blockedSlots
       );
 
       console.log('Slots gerados:', slots);

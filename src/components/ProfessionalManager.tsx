@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,19 +97,22 @@ const ProfessionalManager = () => {
       if (error) throw error;
 
       const availability = {
+        sunday: { active: false, start: '08:00', end: '18:00' },
         monday: { active: false, start: '08:00', end: '18:00' },
         tuesday: { active: false, start: '08:00', end: '18:00' },
         wednesday: { active: false, start: '08:00', end: '18:00' },
         thursday: { active: false, start: '08:00', end: '18:00' },
         friday: { active: false, start: '08:00', end: '18:00' },
-        saturday: { active: false, start: '08:00', end: '12:00' },
-        sunday: { active: false, start: '08:00', end: '12:00' }
+        saturday: { active: false, start: '08:00', end: '12:00' }
       };
 
+      // Mapear corretamente os dias da semana (0=domingo, 1=segunda, etc.)
       const dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
       data?.forEach(record => {
         const dayName = dayMapping[record.day_of_week];
+        console.log(`Carregando disponibilidade: dia ${record.day_of_week} (${dayName}) = ${record.is_available} de ${record.start_time} às ${record.end_time}`);
+        
         if (dayName && availability[dayName]) {
           availability[dayName] = {
             active: record.is_available,
@@ -120,6 +122,7 @@ const ProfessionalManager = () => {
         }
       });
 
+      console.log('Disponibilidade carregada:', availability);
       return availability;
     } catch (error) {
       console.error('Erro ao carregar disponibilidade:', error);
@@ -174,8 +177,10 @@ const ProfessionalManager = () => {
         .delete()
         .eq('professional_id', professionalId);
 
-      // Inserir novas disponibilidades
+      // Inserir novas disponibilidades com mapeamento correto
       const availabilityData = [];
+      
+      // Mapear dias corretamente (0=domingo, 1=segunda, etc.)
       const dayMapping = {
         'sunday': 0,
         'monday': 1,
@@ -186,8 +191,10 @@ const ProfessionalManager = () => {
         'saturday': 6
       };
 
-      Object.entries(formData.availability).forEach(([day, config]) => {
-        const dayOfWeek = dayMapping[day];
+      Object.entries(formData.availability).forEach(([dayName, config]) => {
+        const dayOfWeek = dayMapping[dayName];
+        console.log(`Salvando disponibilidade: ${dayName} (${dayOfWeek}) = ${config.active} de ${config.start} às ${config.end}`);
+        
         availabilityData.push({
           professional_id: professionalId,
           day_of_week: dayOfWeek,
@@ -198,11 +205,15 @@ const ProfessionalManager = () => {
       });
 
       if (availabilityData.length > 0) {
+        console.log('Inserindo disponibilidades:', availabilityData);
         const { error } = await supabase
           .from('professional_availability')
           .insert(availabilityData);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao inserir disponibilidades:', error);
+          throw error;
+        }
       }
 
       // Salvar serviços - remover todos existentes primeiro
@@ -282,13 +293,13 @@ const ProfessionalManager = () => {
   };
 
   const dayNames = {
+    sunday: 'Domingo',
     monday: 'Segunda',
     tuesday: 'Terça',
     wednesday: 'Quarta',
     thursday: 'Quinta',
     friday: 'Sexta',
-    saturday: 'Sábado',
-    sunday: 'Domingo'
+    saturday: 'Sábado'
   };
 
   return (
