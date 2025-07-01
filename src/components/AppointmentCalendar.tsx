@@ -52,7 +52,7 @@ const AppointmentCalendar = () => {
         service: apt.services?.name || 'Serviço não encontrado',
         professional: apt.professionals?.name || 'Profissional não encontrado',
         status: apt.status,
-        price: apt.total_price || apt.services?.price || 0,
+        price: apt.services?.price || 0,
         notes: apt.notes,
         checkInStatus: apt.check_in_status,
         paymentStatus: apt.payment_status
