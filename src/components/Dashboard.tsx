@@ -6,6 +6,7 @@ import { Calendar, Users, Clock, TrendingUp, DollarSign, CheckCircle, AlertCircl
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import DashboardCharts from './DashboardCharts';
 
 interface DashboardProps {
   onNavigate?: (tab: string) => void;
@@ -271,16 +272,16 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         </Card>
       </div>
 
-      {/* Recent Appointments */}
+      {/* Dashboard Charts */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl font-bold text-gray-800">
-                Agendamentos de Hoje
+                Análise de Performance
               </CardTitle>
               <CardDescription>
-                Próximos compromissos e status atual
+                Gráficos interativos com métricas do seu negócio
               </CardDescription>
             </div>
             <Button 
@@ -288,9 +289,24 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
               size="sm"
               onClick={() => onNavigate?.('calendar')}
             >
-              Ver Todos
+              Ver Agenda
             </Button>
           </div>
+        </CardHeader>
+        <CardContent>
+          <DashboardCharts onNavigate={onNavigate} />
+        </CardContent>
+      </Card>
+
+      {/* Recent Appointments - Simplified */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-gray-800">
+            Próximos Agendamentos
+          </CardTitle>
+          <CardDescription>
+            Agendamentos de hoje que precisam de atenção
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {recentAppointments.length === 0 ? (
@@ -306,32 +322,37 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {recentAppointments.map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white font-medium text-sm">
+            <div className="space-y-3">
+              {recentAppointments.slice(0, 3).map((appointment) => (
+                <div key={appointment.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium text-xs">
                         {appointment.client.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{appointment.client}</p>
-                      <p className="text-sm text-gray-500">{appointment.service}</p>
-                      <p className="text-xs text-gray-400">com {appointment.professional}</p>
+                      <p className="font-medium text-gray-800 text-sm">{appointment.client}</p>
+                      <p className="text-xs text-gray-500">{appointment.service}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {appointment.time}
-                      </div>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">{appointment.time}</span>
                     {getStatusBadge(appointment.status)}
                   </div>
                 </div>
               ))}
+              {recentAppointments.length > 3 && (
+                <div className="text-center pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => onNavigate?.('calendar')}
+                  >
+                    Ver todos os {recentAppointments.length} agendamentos
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

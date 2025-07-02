@@ -86,29 +86,71 @@ const ProfessionalAvailabilityManager = ({
   const saveAvailability = async () => {
     setSaving(true);
     try {
-      // Primeiro, remover toda disponibilidade existente para este profissional
-      const { error: deleteError } = await supabase
-        .from('professional_availability')
-        .delete()
-        .eq('professional_id', professionalId);
-
-      if (deleteError) throw deleteError;
-
-      // Inserir nova disponibilidade apenas para dias marcados como disponíveis
-      const availableDays = availability.filter(day => day.is_available);
-      
-      if (availableDays.length > 0) {
-        const { error: insertError } = await supabase
+      // Salvar cada dia individualmente
+      for (const day of availability) {
+        console.log('Salvando dia:', day);
+        
+        // Primeiro verificar se já existe um registro para este dia
+        const { data: existing, error: selectError } = await supabase
           .from('professional_availability')
-          .insert(availableDays.map(day => ({
-            professional_id: professionalId,
-            day_of_week: day.day_of_week,
-            is_available: day.is_available,
-            start_time: day.start_time,
-            end_time: day.end_time
-          })));
+          .select('id')
+          .eq('professional_id', professionalId)
+          .eq('day_of_week', day.day_of_week)
+          .maybeSingle();
 
-        if (insertError) throw insertError;
+        if (selectError) {
+          console.error('Erro ao verificar dia existente:', selectError);
+          throw selectError;
+        }
+
+        if (day.is_available) {
+          // Se o dia está marcado como disponível, inserir ou atualizar
+          if (existing) {
+            // Atualizar registro existente
+            const { error: updateError } = await supabase
+              .from('professional_availability')
+              .update({
+                is_available: day.is_available,
+                start_time: day.start_time,
+                end_time: day.end_time
+              })
+              .eq('id', existing.id);
+
+            if (updateError) {
+              console.error('Erro ao atualizar disponibilidade:', updateError);
+              throw updateError;
+            }
+          } else {
+            // Inserir novo registro
+            const { error: insertError } = await supabase
+              .from('professional_availability')
+              .insert({
+                professional_id: professionalId,
+                day_of_week: day.day_of_week,
+                is_available: day.is_available,
+                start_time: day.start_time,
+                end_time: day.end_time
+              });
+
+            if (insertError) {
+              console.error('Erro ao inserir disponibilidade:', insertError);
+              throw insertError;
+            }
+          }
+        } else {
+          // Se o dia não está disponível, remover registro se existir
+          if (existing) {
+            const { error: deleteError } = await supabase
+              .from('professional_availability')
+              .delete()
+              .eq('id', existing.id);
+
+            if (deleteError) {
+              console.error('Erro ao remover disponibilidade:', deleteError);
+              throw deleteError;
+            }
+          }
+        }
       }
 
       toast({

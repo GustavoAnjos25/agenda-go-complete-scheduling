@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Users, Search, Phone, Mail, Calendar, MessageSquare, Settings } from 'lucide-react';
+import { Users, Search, Phone, Mail, Calendar, MessageSquare, Settings, History } from 'lucide-react';
 import ClientStatusModal from './ClientStatusModal';
+import ClientHistoryModal from './ClientHistoryModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +19,7 @@ interface ClientManagerProps {
 const ClientManager = ({ onNavigate }: ClientManagerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,10 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
       case 'status':
         setSelectedClient(client);
         setIsStatusModalOpen(true);
+        break;
+      case 'history':
+        setSelectedClient(client);
+        setIsHistoryModalOpen(true);
         break;
     }
   };
@@ -305,6 +311,14 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleClientAction('history', client)}
+                      title="Ver histórico completo"
+                    >
+                      <History className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => handleClientAction('message', client)}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -336,6 +350,12 @@ const ClientManager = ({ onNavigate }: ClientManagerProps) => {
         onClose={() => setIsStatusModalOpen(false)}
         client={selectedClient}
         onUpdateStatus={handleUpdateClientStatus}
+      />
+
+      <ClientHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        client={selectedClient}
       />
     </div>
   );

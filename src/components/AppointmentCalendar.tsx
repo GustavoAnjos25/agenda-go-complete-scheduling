@@ -327,16 +327,20 @@ const AppointmentCalendar = () => {
                   return (
                     <div 
                       key={time} 
-                      className={`p-2 text-sm rounded border cursor-pointer hover:bg-opacity-80 transition-colors ${
+                      className={`p-3 text-sm rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                         isAvailable
-                          ? 'bg-green-50 border-green-200 text-green-800 hover:bg-green-100'
-                          : 'bg-red-50 border-red-200 text-red-800 hover:bg-red-100'
+                          ? 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100 hover:border-green-400 hover:shadow-md'
+                          : 'bg-red-50 border-red-300 text-red-800 hover:bg-red-100 hover:border-red-400 cursor-not-allowed'
                       }`}
-                      onClick={() => handleTimeSlotClick(time)}
+                      onClick={() => isAvailable && handleTimeSlotClick(time)}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{time}</span>
-                        <span className="text-xs">
+                        <span className="font-semibold">{time}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isAvailable 
+                            ? 'bg-green-200 text-green-800' 
+                            : 'bg-red-200 text-red-800'
+                        }`}>
                           {isAvailable ? 'Livre' : 'Ocupado'}
                         </span>
                       </div>
