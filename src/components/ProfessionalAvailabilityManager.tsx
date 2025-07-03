@@ -88,7 +88,13 @@ const ProfessionalAvailabilityManager = ({
     try {
       // Salvar cada dia individualmente
       for (const day of availability) {
-        console.log('Salvando dia:', day);
+        console.log('Salvando dia:', {
+          day_of_week: day.day_of_week,
+          dayName: daysOfWeek.find(d => d.id === day.day_of_week)?.name,
+          is_available: day.is_available,
+          start_time: day.start_time,
+          end_time: day.end_time
+        });
         
         // Primeiro verificar se já existe um registro para este dia
         const { data: existing, error: selectError } = await supabase
@@ -107,6 +113,11 @@ const ProfessionalAvailabilityManager = ({
           // Se o dia está marcado como disponível, inserir ou atualizar
           if (existing) {
             // Atualizar registro existente
+            console.log('Atualizando registro existente para:', {
+              day_of_week: day.day_of_week,
+              dayName: daysOfWeek.find(d => d.id === day.day_of_week)?.name
+            });
+            
             const { error: updateError } = await supabase
               .from('professional_availability')
               .update({
@@ -122,6 +133,11 @@ const ProfessionalAvailabilityManager = ({
             }
           } else {
             // Inserir novo registro
+            console.log('Inserindo novo registro para:', {
+              day_of_week: day.day_of_week,
+              dayName: daysOfWeek.find(d => d.id === day.day_of_week)?.name
+            });
+            
             const { error: insertError } = await supabase
               .from('professional_availability')
               .insert({
