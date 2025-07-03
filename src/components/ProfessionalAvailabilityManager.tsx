@@ -27,13 +27,13 @@ const ProfessionalAvailabilityManager = ({
   const { toast } = useToast();
 
   const daysOfWeek = [
+    { id: 0, name: 'Domingo', short: 'Dom' },
     { id: 1, name: 'Segunda-feira', short: 'Seg' },
     { id: 2, name: 'Terça-feira', short: 'Ter' },
     { id: 3, name: 'Quarta-feira', short: 'Qua' },
     { id: 4, name: 'Quinta-feira', short: 'Qui' },
     { id: 5, name: 'Sexta-feira', short: 'Sex' },
-    { id: 6, name: 'Sábado', short: 'Sáb' },
-    { id: 0, name: 'Domingo', short: 'Dom' }
+    { id: 6, name: 'Sábado', short: 'Sáb' }
   ];
 
   useEffect(() => {
