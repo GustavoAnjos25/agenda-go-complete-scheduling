@@ -77,9 +77,16 @@ const ProfessionalAvailabilityManager = ({
     }
   };
 
-  const updateDayAvailability = (dayIndex: number, field: string, value: any) => {
-    setAvailability(prev => prev.map((day, index) => 
-      index === dayIndex ? { ...day, [field]: value } : day
+  const updateDayAvailability = (dayOfWeek: number, field: string, value: any) => {
+    console.log('Atualizando disponibilidade:', {
+      dayOfWeek,
+      dayName: daysOfWeek.find(d => d.id === dayOfWeek)?.name,
+      field,
+      value
+    });
+    
+    setAvailability(prev => prev.map((day) => 
+      day.day_of_week === dayOfWeek ? { ...day, [field]: value } : day
     ));
   };
 
@@ -223,10 +230,10 @@ const ProfessionalAvailabilityManager = ({
                   <div className="w-32">
                     <p className="font-medium text-sm">{dayInfo?.name}</p>
                   </div>
-                  <Switch
+                   <Switch
                     checked={day.is_available}
                     onCheckedChange={(checked) => 
-                      updateDayAvailability(dayIndex, 'is_available', checked)
+                      updateDayAvailability(day.day_of_week, 'is_available', checked)
                     }
                   />
                 </div>
@@ -242,7 +249,7 @@ const ProfessionalAvailabilityManager = ({
                         type="time"
                         value={day.start_time}
                         onChange={(e) => 
-                          updateDayAvailability(dayIndex, 'start_time', e.target.value)
+                          updateDayAvailability(day.day_of_week, 'start_time', e.target.value)
                         }
                         className="w-24"
                       />
@@ -256,7 +263,7 @@ const ProfessionalAvailabilityManager = ({
                         type="time"
                         value={day.end_time}
                         onChange={(e) => 
-                          updateDayAvailability(dayIndex, 'end_time', e.target.value)
+                          updateDayAvailability(day.day_of_week, 'end_time', e.target.value)
                         }
                         className="w-24"
                       />
