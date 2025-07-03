@@ -180,9 +180,19 @@ const AppointmentCalendar = () => {
     .filter(apt => apt.status !== 'cancelled')
     .reduce((sum, apt) => sum + (apt.price || 0), 0);
 
-  // Função para determinar se um horário está disponível
+  // Função para determinar se um horário está disponível considerando duração do serviço
   const isTimeSlotAvailable = (time: string) => {
-    return !appointments.some(apt => apt.time === time && apt.status !== 'cancelled');
+    const proposedTime = new Date(`2000-01-01T${time}`);
+    
+    return !appointments.some(apt => {
+      if (apt.status === 'cancelled') return false;
+      
+      const appointmentStart = new Date(`2000-01-01T${apt.time}`);
+      const appointmentEnd = new Date(appointmentStart.getTime() + (apt.duration || 30) * 60000);
+      
+      // Verifica se o horário proposto se sobrepõe com algum agendamento existente
+      return proposedTime >= appointmentStart && proposedTime < appointmentEnd;
+    });
   };
 
   return (

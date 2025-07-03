@@ -25,7 +25,7 @@ const CheckIn = () => {
         .select(`
           *,
           clients (name, email, phone),
-          services (name, duration),
+          services (name, duration, price),
           professionals (name)
         `)
         .eq('user_id', user.id)
@@ -209,6 +209,9 @@ const CheckIn = () => {
                           <p className="font-medium">{appointment.services?.name}</p>
                           <p className="text-sm text-gray-600">
                             Duração: {appointment.services?.duration} min
+                          </p>
+                          <p className="text-sm font-semibold text-green-600">
+                            Preço: R$ {appointment.services?.price?.toFixed(2) || '0.00'}
                           </p>
                         </div>
                         <div>
