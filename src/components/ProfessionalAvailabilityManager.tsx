@@ -22,6 +22,7 @@ const ProfessionalAvailabilityManager = ({
   onClose 
 }: ProfessionalAvailabilityManagerProps) => {
   const [availability, setAvailability] = useState([]);
+  const [modifiedDays, setModifiedDays] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -85,6 +86,9 @@ const ProfessionalAvailabilityManager = ({
       value
     });
     
+    // Marcar este dia como modificado
+    setModifiedDays(prev => new Set([...prev, dayOfWeek]));
+    
     setAvailability(prev => prev.map((day) => 
       day.day_of_week === dayOfWeek ? { ...day, [field]: value } : day
     ));
@@ -93,8 +97,15 @@ const ProfessionalAvailabilityManager = ({
   const saveAvailability = async () => {
     setSaving(true);
     try {
-      // Salvar cada dia individualmente
-      for (const day of availability) {
+      // Salvar apenas os dias que foram modificados
+      const daysToSave = availability.filter(day => modifiedDays.has(day.day_of_week));
+      
+      console.log('Salvando apenas os dias modificados:', daysToSave.map(d => ({
+        day_of_week: d.day_of_week,
+        dayName: daysOfWeek.find(dd => dd.id === d.day_of_week)?.name
+      })));
+      
+      for (const day of daysToSave) {
         console.log('Salvando dia:', {
           day_of_week: day.day_of_week,
           dayName: daysOfWeek.find(d => d.id === day.day_of_week)?.name,
@@ -181,6 +192,8 @@ const ProfessionalAvailabilityManager = ({
         description: `Horários de ${professionalName} atualizados com sucesso`,
       });
 
+      // Limpar dias modificados após salvar
+      setModifiedDays(new Set());
       onClose();
     } catch (error) {
       console.error('Erro ao salvar disponibilidade:', error);
