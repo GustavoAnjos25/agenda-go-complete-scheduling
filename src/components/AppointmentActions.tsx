@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -40,7 +41,7 @@ const AppointmentActions = ({ appointmentId, currentStatus, onStatusChange, onEd
 
       toast({
         title: "Status atualizado",
-        description: Agendamento ${getStatusLabel(newStatus).toLowerCase()},
+        description: `Agendamento ${getStatusLabel(newStatus).toLowerCase()}`,
       });
 
       onStatusChange();
