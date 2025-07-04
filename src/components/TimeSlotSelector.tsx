@@ -84,7 +84,9 @@ const TimeSlotSelector = ({
       console.log('Buscando disponibilidade para:', {
         professional_id: selectedProfessional,
         day_of_week: dayOfWeek,
-        date: selectedDate
+        date: selectedDate,
+        selectedDateObj: selectedDateObj,
+        dayName: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dayOfWeek]
       });
 
       const { data: availability, error: availabilityError } = await supabase
