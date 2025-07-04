@@ -81,17 +81,17 @@ const TimeSlotSelector = ({
       const selectedDateObj = new Date(selectedDate);
       const dayOfWeek = selectedDateObj.getDay();
       
-      console.log('Buscando disponibilidade para:', {
-        professional_id: selectedProfessional,
-        day_of_week: dayOfWeek,
-        date: selectedDate,
-        selectedDateObj: selectedDateObj,
-        dayName: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dayOfWeek]
+      console.log('🔍 DIAGNÓSTICO COMPLETO - Buscando disponibilidade:', {
+        selectedDate,
+        selectedDateObj: selectedDateObj.toString(),
+        dayOfWeek,
+        dayName: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dayOfWeek],
+        professional_id: selectedProfessional
       });
 
       const { data: availability, error: availabilityError } = await supabase
         .from('professional_availability')
-        .select('start_time, end_time, is_available')
+        .select('start_time, end_time, is_available, day_of_week')
         .eq('professional_id', selectedProfessional)
         .eq('day_of_week', dayOfWeek)
         .eq('is_available', true);
@@ -101,7 +101,17 @@ const TimeSlotSelector = ({
         throw availabilityError;
       }
 
-      console.log('Disponibilidade encontrada:', availability);
+      console.log('📊 RESULTADO DA CONSULTA:', {
+        queryDayOfWeek: dayOfWeek,
+        queryDayName: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dayOfWeek],
+        foundRecords: availability?.length || 0,
+        records: availability?.map(a => ({
+          day_of_week: a.day_of_week,
+          dayName: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][a.day_of_week],
+          start_time: a.start_time,
+          end_time: a.end_time
+        }))
+      });
 
       if (!availability || availability.length === 0) {
         console.log('Nenhuma disponibilidade encontrada para este dia');
