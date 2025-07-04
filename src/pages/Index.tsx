@@ -14,18 +14,22 @@ import CheckIn from '@/components/CheckIn';
 import ServicesAdmin from '@/components/ServicesAdmin';
 import ProfessionalManager from '@/components/ProfessionalManager';
 import AdminPanel from '@/components/AdminPanel';
+import Home from './Home';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('home');
   const { user } = useAuth();
 
-  // Usuário autenticado sempre vai direto para o dashboard
+  // Usuário autenticado começa na página inicial
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header onTabChange={setCurrentTab} currentTab={currentTab} />
-      <main className="container mx-auto px-4 py-8">
+      {currentTab !== 'home' && <Header onTabChange={setCurrentTab} currentTab={currentTab} />}
+      <main className={`${currentTab !== 'home' ? 'container mx-auto px-4 py-8' : ''}`}>
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+          <TabsContent value="home">
+            <Home onNavigate={setCurrentTab} />
+          </TabsContent>
           <TabsContent value="dashboard">
             <Dashboard onNavigate={setCurrentTab} />
           </TabsContent>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Calendar, Users, BarChart3, CheckCircle, Scissors, UserCheck, Settings, LogOut, User } from 'lucide-react';
+import { Calendar, Users, BarChart3, CheckCircle, Scissors, UserCheck, Settings, LogOut, User, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,8 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
   const { toast } = useToast();
 
   const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Calendar, color: 'text-blue-600' },
+    { id: 'home', label: 'Início', icon: Home, color: 'text-gray-600' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-600' },
     { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-green-600' },
     { id: 'clients', label: 'Clientes', icon: Users, color: 'text-purple-600' },
     { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-orange-600' },
@@ -55,11 +56,11 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
         <div className="flex items-center space-x-8">
           {/* Logo e título */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onClick={() => onTabChange('home')}>
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">AgendaGo</h1>
+              <h1 className="text-xl font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => onTabChange('home')}>AgendaGo</h1>
               <p className="text-xs text-gray-500">Sistema de Agendamentos</p>
             </div>
           </div>

@@ -24,7 +24,8 @@ const MobileNavigation = ({ currentTab, onTabChange }: MobileNavigationProps) =>
   const [isOpen, setIsOpen] = useState(false);
 
   const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'text-blue-600' },
+    { id: 'home', label: 'Início', icon: Home, color: 'text-gray-600' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-600' },
     { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-green-600' },
     { id: 'clients', label: 'Clientes', icon: Users, color: 'text-purple-600' },
     { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-orange-600' },
