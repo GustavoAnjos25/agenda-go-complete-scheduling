@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -51,7 +50,25 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   // Carregar dados para edição
   useEffect(() => {
     if (editingAppointment && isOpen) {
-      console.log('Carregando dados para edição:', editingAppointment);
+      console.log('🔍 [DEBUG] Carregando dados para edição:', editingAppointment);
+      
+      // DEBUG: Verificar dados de data/hora do agendamento
+      console.log('🔍 [DEBUG] Data original do agendamento:', editingAppointment.date);
+      console.log('🔍 [DEBUG] Hora original do agendamento:', editingAppointment.time);
+      console.log('🔍 [DEBUG] Timezone do browser:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      
+      // Verificar se a data está sendo interpretada corretamente
+      if (editingAppointment.date) {
+        const originalDate = new Date(editingAppointment.date);
+        const localDate = new Date(originalDate.getTime() + originalDate.getTimezoneOffset() * 60000);
+        console.log('🔍 [DEBUG] Data original como Date object:', originalDate);
+        console.log('🔍 [DEBUG] Data ajustada para local:', localDate);
+        console.log('🔍 [DEBUG] ISO String da data original:', originalDate.toISOString());
+        console.log('🔍 [DEBUG] ISO String da data local:', localDate.toISOString());
+        console.log('🔍 [DEBUG] Dia da semana da data original:', originalDate.getDay()); // 0=domingo, 1=segunda, etc.
+        console.log('🔍 [DEBUG] Dia da semana da data local:', localDate.getDay());
+      }
+      
       setFormData({
         clientName: editingAppointment.client || '',
         clientEmail: editingAppointment.clientEmail || '',
@@ -64,6 +81,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
       });
     } else if (!editingAppointment && isOpen) {
       // Resetar form para novo agendamento
+      console.log('🔍 [DEBUG] Resetando formulário para novo agendamento');
       setFormData({
         clientName: '',
         clientEmail: '',
@@ -80,6 +98,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
   useEffect(() => {
     if (formData.professional) {
+      console.log('🔍 [DEBUG] Carregando serviços para profissional:', formData.professional);
       loadServicesByProfessional(formData.professional);
     } else {
       setFilteredServices(services);
@@ -90,29 +109,47 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   useEffect(() => {
     if (formData.service) {
       const service = filteredServices.find(s => s.id === formData.service);
+      console.log('🔍 [DEBUG] Serviço selecionado:', service);
       setSelectedServiceInfo(service);
     } else {
       setSelectedServiceInfo(null);
     }
   }, [formData.service, filteredServices]);
 
+  // DEBUG: Monitorar mudanças na data selecionada
+  useEffect(() => {
+    if (formData.date) {
+      console.log('🔍 [DEBUG] Data selecionada mudou:', formData.date);
+      const selectedDate = new Date(formData.date);
+      const localDate = new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000);
+      console.log('🔍 [DEBUG] Data como Date object:', selectedDate);
+      console.log('🔍 [DEBUG] Data ajustada local:', localDate);
+      console.log('🔍 [DEBUG] Dia da semana selecionado:', selectedDate.getDay());
+      console.log('🔍 [DEBUG] Dia da semana local:', localDate.getDay());
+      console.log('🔍 [DEBUG] Timezone offset:', selectedDate.getTimezoneOffset());
+    }
+  }, [formData.date]);
+
   const loadServices = async () => {
     try {
+      console.log('🔍 [DEBUG] Carregando serviços...');
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .order('name');
 
       if (error) throw error;
+      console.log('🔍 [DEBUG] Serviços carregados:', data?.length || 0);
       setServices(data || []);
       setFilteredServices(data || []);
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error);
+      console.error('❌ [ERROR] Erro ao carregar serviços:', error);
     }
   };
 
   const loadProfessionals = async () => {
     try {
+      console.log('🔍 [DEBUG] Carregando profissionais...');
       const { data, error } = await supabase
         .from('professionals')
         .select('*')
@@ -121,14 +158,17 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         .order('name');
 
       if (error) throw error;
+      console.log('🔍 [DEBUG] Profissionais carregados:', data?.length || 0);
+      console.log('🔍 [DEBUG] Dados dos profissionais:', data);
       setProfessionals(data || []);
     } catch (error) {
-      console.error('Erro ao carregar profissionais:', error);
+      console.error('❌ [ERROR] Erro ao carregar profissionais:', error);
     }
   };
 
   const loadServicesByProfessional = async (professionalId: string) => {
     try {
+      console.log('🔍 [DEBUG] Carregando serviços do profissional:', professionalId);
       const { data, error } = await supabase
         .from('professional_services')
         .select(`
@@ -139,14 +179,16 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
       if (error) throw error;
       
       const professionalServices = data?.map(ps => ps.services).filter(Boolean) || [];
+      console.log('🔍 [DEBUG] Serviços do profissional encontrados:', professionalServices.length);
       setFilteredServices(professionalServices);
       
       // Limpar serviço selecionado se não estiver mais disponível
       if (formData.service && !professionalServices.find(s => s.id === formData.service)) {
+        console.log('🔍 [DEBUG] Limpando serviço selecionado (não disponível para este profissional)');
         setFormData(prev => ({ ...prev, service: '' }));
       }
     } catch (error) {
-      console.error('Erro ao carregar serviços do profissional:', error);
+      console.error('❌ [ERROR] Erro ao carregar serviços do profissional:', error);
       setFilteredServices([]);
     }
   };
@@ -157,7 +199,11 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   };
 
   const handleSave = async () => {
+    console.log('🔍 [DEBUG] Iniciando salvamento do agendamento...');
+    console.log('🔍 [DEBUG] Dados do formulário:', formData);
+    
     if (!formData.clientName || !formData.service || !formData.professional || !formData.date || !formData.time) {
+      console.log('❌ [ERROR] Campos obrigatórios não preenchidos');
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -167,6 +213,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
     }
 
     if (formData.clientPhone && !validatePhone(formData.clientPhone)) {
+      console.log('❌ [ERROR] Telefone inválido:', formData.clientPhone);
       toast({
         title: "Telefone inválido",
         description: "Digite um telefone válido no formato (XX) XXXXX-XXXX",
@@ -180,7 +227,13 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    console.log('🔍 [DEBUG] Validação de data:');
+    console.log('🔍 [DEBUG] Data selecionada:', selectedDate);
+    console.log('🔍 [DEBUG] Data hoje:', today);
+    console.log('🔍 [DEBUG] Data selecionada < hoje?', selectedDate < today);
+    
     if (selectedDate < today) {
+      console.log('❌ [ERROR] Data selecionada é anterior a hoje');
       toast({
         title: "Data inválida",
         description: "Não é possível agendar para datas passadas",
@@ -194,6 +247,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
       let clientId;
       
       if (editingAppointment) {
+        console.log('🔍 [DEBUG] Modo edição - Atualizando agendamento existente');
         // Para edição, usar o cliente existente
         clientId = editingAppointment.client_id;
         
@@ -209,6 +263,14 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
         if (updateClientError) throw updateClientError;
 
+        // DEBUG: Verificar dados antes de salvar
+        console.log('🔍 [DEBUG] Dados do agendamento que serão salvos:');
+        console.log('🔍 [DEBUG] service_id:', formData.service);
+        console.log('🔍 [DEBUG] professional_id:', formData.professional);
+        console.log('🔍 [DEBUG] date:', formData.date);
+        console.log('🔍 [DEBUG] time:', formData.time);
+        console.log('🔍 [DEBUG] notes:', formData.notes);
+
         // Atualizar agendamento
         const { error: updateAppointmentError } = await supabase
           .from('appointments')
@@ -223,11 +285,13 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
         if (updateAppointmentError) throw updateAppointmentError;
 
+        console.log('✅ [SUCCESS] Agendamento atualizado com sucesso');
         toast({
           title: "Agendamento atualizado!",
           description: `Agendamento de ${formData.clientName} foi atualizado com sucesso`,
         });
       } else {
+        console.log('🔍 [DEBUG] Modo criação - Criando novo agendamento');
         // Para novo agendamento
         // Verificar se cliente já existe pelo email (se fornecido) ou nome
         const { data: existingClients, error: searchError } = await supabase
@@ -239,8 +303,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         if (searchError) throw searchError;
 
         if (existingClients && existingClients.length > 0) {
+          console.log('🔍 [DEBUG] Cliente existente encontrado');
           clientId = existingClients[0].id;
         } else {
+          console.log('🔍 [DEBUG] Criando novo cliente');
           // Criar novo cliente
           const { data: newClient, error: clientError } = await supabase
             .from('clients')
@@ -256,6 +322,15 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
           if (clientError) throw clientError;
           clientId = newClient.id;
         }
+
+        // DEBUG: Verificar dados antes de criar agendamento
+        console.log('🔍 [DEBUG] Dados do novo agendamento:');
+        console.log('🔍 [DEBUG] client_id:', clientId);
+        console.log('🔍 [DEBUG] service_id:', formData.service);
+        console.log('🔍 [DEBUG] professional_id:', formData.professional);
+        console.log('🔍 [DEBUG] date:', formData.date);
+        console.log('🔍 [DEBUG] time:', formData.time);
+        console.log('🔍 [DEBUG] user_id:', user.id);
 
         // Criar agendamento
         const { error: appointmentError } = await supabase
@@ -273,6 +348,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
         if (appointmentError) throw appointmentError;
 
+        console.log('✅ [SUCCESS] Novo agendamento criado com sucesso');
         toast({
           title: "Agendamento criado!",
           description: `Agendamento para ${formData.clientName} foi criado com sucesso`,
@@ -295,7 +371,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
       onSave();
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar agendamento:', error);
+      console.error('❌ [ERROR] Erro ao salvar agendamento:', error);
       toast({
         title: "Erro ao salvar agendamento",
         description: error.message || "Tente novamente",
@@ -308,6 +384,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
   // Definir data mínima como hoje
   const today = new Date().toISOString().split('T')[0];
+  console.log('🔍 [DEBUG] Data mínima (hoje):', today);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -366,7 +443,13 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="professional">Profissional*</Label>
-                <Select value={formData.professional} onValueChange={(value) => setFormData({...formData, professional: value, service: ''})}>
+                <Select 
+                  value={formData.professional} 
+                  onValueChange={(value) => {
+                    console.log('🔍 [DEBUG] Profissional selecionado:', value);
+                    setFormData({...formData, professional: value, service: ''});
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o profissional" />
                   </SelectTrigger>
@@ -382,7 +465,13 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
               <div>
                 <Label htmlFor="service">Serviço*</Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData({...formData, service: value})}>
+                <Select 
+                  value={formData.service} 
+                  onValueChange={(value) => {
+                    console.log('🔍 [DEBUG] Serviço selecionado:', value);
+                    setFormData({...formData, service: value});
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o serviço" />
                   </SelectTrigger>
@@ -413,7 +502,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                 type="date"
                 min={today}
                 value={formData.date}
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                onChange={(e) => {
+                  console.log('🔍 [DEBUG] Data input alterada:', e.target.value);
+                  setFormData({...formData, date: e.target.value});
+                }}
               />
             </div>
 
@@ -422,7 +514,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
               selectedDate={formData.date}
               selectedProfessional={formData.professional}
               selectedService={formData.service}
-              onTimeSelect={(time) => setFormData({...formData, time: time})}
+              onTimeSelect={(time) => {
+                console.log('🔍 [DEBUG] Horário selecionado:', time);
+                setFormData({...formData, time: time});
+              }}
               selectedTime={formData.time}
             />
 
