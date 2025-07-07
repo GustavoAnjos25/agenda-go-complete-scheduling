@@ -368,6 +368,7 @@ const ProfessionalManager = () => {
         <ProfessionalAvailabilityManager
           professionalId={availabilityProfessional.id}
           professionalName={availabilityProfessional.name}
+          open={!!availabilityProfessional}
           onClose={handleCloseAvailability}
         />
       )}

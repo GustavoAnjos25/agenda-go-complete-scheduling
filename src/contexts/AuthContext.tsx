@@ -87,11 +87,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       cleanupAuthState();
       await supabase.auth.signOut({ scope: 'global' });
-      // Force page reload for clean state
-      window.location.href = '/auth';
+      // Redirecionar para a landing page após logout
+      window.location.href = '/';
     } catch (error) {
       // Force logout even if it fails
-      window.location.href = '/auth';
+      window.location.href = '/';
     }
   };
 

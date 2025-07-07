@@ -18,18 +18,15 @@ import Home from './Home';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [currentTab, setCurrentTab] = useState('home');
+  const [currentTab, setCurrentTab] = useState('calendar');
   const { user } = useAuth();
 
-  // Usuário autenticado começa na página inicial
+  // Usuário autenticado começa na página de agendamento
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {currentTab !== 'home' && <Header onTabChange={setCurrentTab} currentTab={currentTab} />}
-      <main className={`${currentTab !== 'home' ? 'container mx-auto px-4 py-8' : ''}`}>
+      <Header onTabChange={setCurrentTab} currentTab={currentTab} />
+      <main className="container mx-auto px-4 py-8">
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-          <TabsContent value="home">
-            <Home onNavigate={setCurrentTab} />
-          </TabsContent>
           <TabsContent value="dashboard">
             <Dashboard onNavigate={setCurrentTab} />
           </TabsContent>

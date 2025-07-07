@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,12 +15,14 @@ interface ProfessionalAvailabilityManagerProps {
   professionalId: string;
   professionalName: string;
   onClose: () => void;
+  open: boolean;
 }
 
 const ProfessionalAvailabilityManager = ({ 
   professionalId, 
   professionalName, 
-  onClose 
+  onClose,
+  open
 }: ProfessionalAvailabilityManagerProps) => {
   const [availability, setAvailability] = useState([]);
   const [modifiedDays, setModifiedDays] = useState(new Set());
@@ -207,109 +210,108 @@ const ProfessionalAvailabilityManager = ({
     }
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center">Carregando disponibilidade...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
-          Disponibilidade - {professionalName}
-        </CardTitle>
-        <CardDescription>
-          Configure os horários de trabalho para cada dia da semana
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-4">
-          {availability.map((day, dayIndex) => {
-            const dayInfo = daysOfWeek.find(d => d.id === day.day_of_week);
-            return (
-              <div key={day.day_of_week} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16">
-                    <Badge variant="outline" className="text-xs">
-                      {dayInfo?.short}
-                    </Badge>
-                  </div>
-                  <div className="w-32">
-                    <p className="font-medium text-sm">{dayInfo?.name}</p>
-                  </div>
-                   <Switch
-                    checked={day.is_available}
-                    onCheckedChange={(checked) => 
-                      updateDayAvailability(day.day_of_week, 'is_available', checked)
-                    }
-                  />
-                </div>
-                
-                {day.is_available && (
-                  <div className="flex items-center space-x-2">
-                    <div>
-                      <Label htmlFor={`start-${day.day_of_week}`} className="text-xs">
-                        Início
-                      </Label>
-                      <Input
-                        id={`start-${day.day_of_week}`}
-                        type="time"
-                        value={day.start_time}
-                        onChange={(e) => 
-                          updateDayAvailability(day.day_of_week, 'start_time', e.target.value)
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600" />
+            Disponibilidade - {professionalName}
+          </DialogTitle>
+          <DialogDescription>
+            Configure os horários de trabalho para cada dia da semana
+          </DialogDescription>
+        </DialogHeader>
+        
+        {loading ? (
+          <div className="py-8 text-center">
+            <p>Carregando disponibilidade...</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid gap-4">
+              {availability.map((day, dayIndex) => {
+                const dayInfo = daysOfWeek.find(d => d.id === day.day_of_week);
+                return (
+                  <div key={day.day_of_week} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16">
+                        <Badge variant="outline" className="text-xs">
+                          {dayInfo?.short}
+                        </Badge>
+                      </div>
+                      <div className="w-32">
+                        <p className="font-medium text-sm">{dayInfo?.name}</p>
+                      </div>
+                       <Switch
+                        checked={day.is_available}
+                        onCheckedChange={(checked) => 
+                          updateDayAvailability(day.day_of_week, 'is_available', checked)
                         }
-                        className="w-24"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor={`end-${day.day_of_week}`} className="text-xs">
-                        Fim
-                      </Label>
-                      <Input
-                        id={`end-${day.day_of_week}`}
-                        type="time"
-                        value={day.end_time}
-                        onChange={(e) => 
-                          updateDayAvailability(day.day_of_week, 'end_time', e.target.value)
-                        }
-                        className="w-24"
-                      />
-                    </div>
+                    
+                    {day.is_available && (
+                      <div className="flex items-center space-x-2">
+                        <div>
+                          <Label htmlFor={`start-${day.day_of_week}`} className="text-xs">
+                            Início
+                          </Label>
+                          <Input
+                            id={`start-${day.day_of_week}`}
+                            type="time"
+                            value={day.start_time}
+                            onChange={(e) => 
+                              updateDayAvailability(day.day_of_week, 'start_time', e.target.value)
+                            }
+                            className="w-24"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`end-${day.day_of_week}`} className="text-xs">
+                            Fim
+                          </Label>
+                          <Input
+                            id={`end-${day.day_of_week}`}
+                            type="time"
+                            value={day.end_time}
+                            onChange={(e) => 
+                              updateDayAvailability(day.day_of_week, 'end_time', e.target.value)
+                            }
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
 
-        <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-blue-600" />
-          <p className="text-sm text-blue-700">
-            Cada dia da semana é salvo individualmente. As alterações só afetam o dia selecionado.
-          </p>
-        </div>
+            <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-blue-600" />
+              <p className="text-sm text-blue-700">
+                Cada dia da semana é salvo individualmente. As alterações só afetam o dia selecionado.
+              </p>
+            </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={saveAvailability} 
-            disabled={saving}
-            className="bg-gradient-to-r from-blue-500 to-green-500"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Salvando..." : "Salvar Disponibilidade"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={saveAvailability} 
+                disabled={saving}
+                className="bg-gradient-to-r from-blue-500 to-green-500"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? "Salvando..." : "Salvar Disponibilidade"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

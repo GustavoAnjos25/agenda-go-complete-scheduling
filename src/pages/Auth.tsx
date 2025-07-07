@@ -23,7 +23,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/app');
     }
   }, [user, navigate]);
 
@@ -50,9 +50,9 @@ const Auth = () => {
       } else {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Redirecionando para o painel...",
+          description: "Redirecionando para o sistema...",
         });
-        navigate('/');
+        navigate('/app');
       }
     } catch (error) {
       toast({

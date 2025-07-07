@@ -110,11 +110,50 @@ const AdminPanel = () => {
     }
   };
 
-  const saveWorkingHours = () => {
-    toast({
-      title: "Horários salvos",
-      description: "Horários de funcionamento atualizados",
-    });
+  const saveWorkingHours = async () => {
+    setLoading(true);
+    try {
+      // Aplicar os horários para todos os profissionais
+      const daysOfWeek = [0, 1, 2, 3, 4, 5, 6]; // Domingo a Sábado
+      
+      for (const professional of professionals) {
+        for (const dayOfWeek of daysOfWeek) {
+          // Primeiro, deletar disponibilidade existente para este dia
+          await supabase
+            .from('professional_availability')
+            .delete()
+            .eq('professional_id', professional.id)
+            .eq('day_of_week', dayOfWeek);
+          
+          // Depois, inserir nova disponibilidade (segunda a sexta)
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+            await supabase
+              .from('professional_availability')
+              .insert({
+                professional_id: professional.id,
+                day_of_week: dayOfWeek,
+                is_available: true,
+                start_time: workingHours.start,
+                end_time: workingHours.end
+              });
+          }
+        }
+      }
+
+      toast({
+        title: "Horários salvos com sucesso!",
+        description: "Horários aplicados para todos os profissionais (Segunda a Sexta)",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar horários:', error);
+      toast({
+        title: "Erro ao salvar horários",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Estatísticas
@@ -224,8 +263,12 @@ const AdminPanel = () => {
                   onChange={(e) => setWorkingHours(prev => ({ ...prev, end: e.target.value }))}
                 />
               </div>
-              <Button onClick={saveWorkingHours} className="w-full">
-                Salvar Horários
+              <Button 
+                onClick={saveWorkingHours} 
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "Aplicando..." : "Aplicar para Todos os Profissionais"}
               </Button>
             </div>
           </CardContent>
