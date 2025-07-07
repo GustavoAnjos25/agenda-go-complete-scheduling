@@ -1,18 +1,31 @@
-
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, Plus, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
-import NewAppointmentModalWithDB from './NewAppointmentModalWithDB';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import AppointmentActions from './AppointmentActions';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calendar,
+  Clock,
+  Users,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+} from "lucide-react";
+import NewAppointmentModalWithDB from "./NewAppointmentModalWithDB";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import AppointmentActions from "./AppointmentActions";
 
 const AppointmentCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day');
+  const [viewMode, setViewMode] = useState("day");
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -28,42 +41,57 @@ const AppointmentCalendar = () => {
 
   const loadAppointments = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      
+      // Usar métodos locais em vez de toISOString()
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      console.log("Data selecionada:", currentDate);
+      console.log(
+        "Dia da semana:",
+        currentDate.toLocaleDateString("pt-BR", { weekday: "long" }),
+      );
+      console.log("String para DB:", dateStr);
+
       const { data, error } = await supabase
-        .from('appointments')
-        .select(`
+        .from("appointments")
+        .select(
+          `
           *,
           clients (name, email, phone),
           services (name, price, duration),
           professionals (name)
-        `)
-        .eq('user_id', user.id)
-        .eq('date', dateStr)
-        .order('time');
+        `,
+        )
+        .eq("user_id", user.id)
+        .eq("date", dateStr)
+        .order("time");
 
       if (error) throw error;
 
-      const formattedAppointments = data?.map(apt => ({
-        id: apt.id,
-        time: apt.time,
-        duration: apt.services?.duration || 30,
-        client: apt.clients?.name || 'Cliente não encontrado',
-        service: apt.services?.name || 'Serviço não encontrado',
-        professional: apt.professionals?.name || 'Profissional não encontrado',
-        status: apt.status,
-        price: apt.services?.price || 0,
-        notes: apt.notes,
-        checkInStatus: apt.check_in_status,
-        paymentStatus: apt.payment_status
-      })) || [];
+      const formattedAppointments =
+        data?.map((apt) => ({
+          id: apt.id,
+          time: apt.time,
+          duration: apt.services?.duration || 30,
+          client: apt.clients?.name || "Cliente não encontrado",
+          service: apt.services?.name || "Serviço não encontrado",
+          professional:
+            apt.professionals?.name || "Profissional não encontrado",
+          status: apt.status,
+          price: apt.services?.price || 0,
+          notes: apt.notes,
+          checkInStatus: apt.check_in_status,
+          paymentStatus: apt.payment_status,
+        })) || [];
 
       setAppointments(formattedAppointments);
     } catch (error) {
-      console.error('Erro ao carregar agendamentos:', error);
+      console.error("Erro ao carregar agendamentos:", error);
       toast({
         title: "Erro ao carregar agendamentos",
         description: "Tente novamente",
@@ -73,19 +101,30 @@ const AppointmentCalendar = () => {
       setLoading(false);
     }
   };
+  
+  // ✅ Adicione esta função no AppointmentCalendar
+  const handleDateFromModal = (dateString) => {
+    // Criar Date object corretamente sem conversão UTC
+    const [year, month, day] = dateString.split('-');
+    const newDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    setCurrentDate(newDate);
+  };
+
 
   const handleEditAppointment = async (appointment: any) => {
     try {
       // Buscar dados completos do agendamento para edição
       const { data, error } = await supabase
-        .from('appointments')
-        .select(`
+        .from("appointments")
+        .select(
+          `
           *,
           clients (name, email, phone),
           services (id, name),
           professionals (id, name)
-        `)
-        .eq('id', appointment.id)
+        `,
+        )
+        .eq("id", appointment.id)
         .single();
 
       if (error) throw error;
@@ -96,13 +135,13 @@ const AppointmentCalendar = () => {
         clientEmail: data.clients?.email,
         clientPhone: data.clients?.phone,
         service_id: data.services?.id,
-        professional_id: data.professionals?.id
+        professional_id: data.professionals?.id,
       };
 
       setEditingAppointment(appointmentData);
       setIsNewAppointmentOpen(true);
     } catch (error) {
-      console.error('Erro ao carregar dados do agendamento:', error);
+      console.error("Erro ao carregar dados do agendamento:", error);
       toast({
         title: "Erro ao carregar agendamento",
         description: "Tente novamente",
@@ -117,43 +156,67 @@ const AppointmentCalendar = () => {
   };
 
   const timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+    "08:00",
+    "08:30",
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "11:00",
+    "11:30",
+    "12:00",
+    "12:30",
+    "13:00",
+    "13:30",
+    "14:00",
+    "14:30",
+    "15:00",
+    "15:30",
+    "16:00",
+    "16:30",
+    "17:00",
+    "17:30",
+    "18:00",
+    "18:30",
+    "19:00",
+    "19:30",
   ];
 
   const getStatusColor = (status: string) => {
     const colors = {
-      scheduled: 'bg-blue-100 text-blue-800 border-blue-200',
-      confirmed: 'bg-green-100 text-green-800 border-green-200',
-      completed: 'bg-purple-100 text-purple-800 border-purple-200',
-      cancelled: 'bg-red-100 text-red-800 border-red-200'
+      scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+      confirmed: "bg-green-100 text-green-800 border-green-200",
+      completed: "bg-purple-100 text-purple-800 border-purple-200",
+      cancelled: "bg-red-100 text-red-800 border-red-200",
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return (
+      colors[status as keyof typeof colors] ||
+      "bg-gray-100 text-gray-800 border-gray-200"
+    );
   };
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      scheduled: 'Agendado',
-      confirmed: 'Confirmado',
-      completed: 'Concluído',
-      cancelled: 'Cancelado'
+      scheduled: "Agendado",
+      confirmed: "Confirmado",
+      completed: "Concluído",
+      cancelled: "Cancelado",
     };
     return labels[status as keyof typeof labels] || status;
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
+  const navigateDate = (direction: "prev" | "next") => {
     const newDate = new Date(currentDate);
-    if (direction === 'prev') {
+    if (direction === "prev") {
       newDate.setDate(newDate.getDate() - 1);
     } else {
       newDate.setDate(newDate.getDate() + 1);
@@ -167,9 +230,9 @@ const AppointmentCalendar = () => {
   };
 
   const handleTimeSlotClick = (time: string) => {
-    const hasAppointment = appointments.some(apt => apt.time === time);
+    const hasAppointment = appointments.some((apt) => apt.time === time);
     if (hasAppointment) {
-      const appointment = appointments.find(apt => apt.time === time);
+      const appointment = appointments.find((apt) => apt.time === time);
     } else {
       setIsNewAppointmentOpen(true);
     }
@@ -177,19 +240,21 @@ const AppointmentCalendar = () => {
 
   // Calcular faturamento previsto excluindo cancelados
   const expectedRevenue = appointments
-    .filter(apt => apt.status !== 'cancelled')
+    .filter((apt) => apt.status !== "cancelled")
     .reduce((sum, apt) => sum + (apt.price || 0), 0);
 
   // Função para determinar se um horário está disponível considerando duração do serviço
   const isTimeSlotAvailable = (time: string) => {
     const proposedTime = new Date(`2000-01-01T${time}`);
-    
-    return !appointments.some(apt => {
-      if (apt.status === 'cancelled') return false;
-      
+
+    return !appointments.some((apt) => {
+      if (apt.status === "cancelled") return false;
+
       const appointmentStart = new Date(`2000-01-01T${apt.time}`);
-      const appointmentEnd = new Date(appointmentStart.getTime() + (apt.duration || 30) * 60000);
-      
+      const appointmentEnd = new Date(
+        appointmentStart.getTime() + (apt.duration || 30) * 60000,
+      );
+
       // Verifica se o horário proposto se sobrepõe com algum agendamento existente
       return proposedTime >= appointmentStart && proposedTime < appointmentEnd;
     });
@@ -202,8 +267,8 @@ const AppointmentCalendar = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Agenda</h1>
           <p className="text-gray-600">Gerencie todos os agendamentos</p>
         </div>
-        
-        <Button 
+
+        <Button
           className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 w-full sm:w-auto"
           onClick={handleNewAppointment}
         >
@@ -217,7 +282,11 @@ const AppointmentCalendar = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateDate("prev")}
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <div>
@@ -225,26 +294,32 @@ const AppointmentCalendar = () => {
                   {formatDate(currentDate)}
                 </CardTitle>
                 <CardDescription>
-                  {loading ? 'Carregando...' : `${appointments.length} agendamento${appointments.length !== 1 ? 's' : ''} hoje`}
+                  {loading
+                    ? "Carregando..."
+                    : `${appointments.length} agendamento${appointments.length !== 1 ? "s" : ""} hoje`}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateDate("next")}
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <div className="flex items-center space-x-2">
-              <Button 
-                variant={viewMode === 'day' ? 'default' : 'outline'} 
+              <Button
+                variant={viewMode === "day" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setViewMode('day')}
+                onClick={() => setViewMode("day")}
               >
                 Dia
               </Button>
-              <Button 
-                variant={viewMode === 'week' ? 'default' : 'outline'} 
+              <Button
+                variant={viewMode === "week" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setViewMode('week')}
+                onClick={() => setViewMode("week")}
               >
                 Semana
               </Button>
@@ -260,13 +335,17 @@ const AppointmentCalendar = () => {
             <div className="flex items-center">
               <Calendar className="h-4 w-4 text-blue-600" />
               <div className="ml-2">
-                <p className="text-sm font-medium text-gray-600">Agendamentos Hoje</p>
-                <p className="text-2xl font-bold text-gray-800">{appointments.length}</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Agendamentos Hoje
+                </p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {appointments.length}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -274,13 +353,16 @@ const AppointmentCalendar = () => {
               <div className="ml-2">
                 <p className="text-sm font-medium text-gray-600">Confirmados</p>
                 <p className="text-2xl font-bold text-gray-800">
-                  {appointments.filter(apt => apt.status === 'confirmed').length}
+                  {
+                    appointments.filter((apt) => apt.status === "confirmed")
+                      .length
+                  }
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -288,19 +370,24 @@ const AppointmentCalendar = () => {
               <div className="ml-2">
                 <p className="text-sm font-medium text-gray-600">Concluídos</p>
                 <p className="text-2xl font-bold text-gray-800">
-                  {appointments.filter(apt => apt.status === 'completed').length}
+                  {
+                    appointments.filter((apt) => apt.status === "completed")
+                      .length
+                  }
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 text-green-600" />
               <div className="ml-2">
-                <p className="text-sm font-medium text-gray-600">Faturamento Previsto</p>
+                <p className="text-sm font-medium text-gray-600">
+                  Faturamento Previsto
+                </p>
                 <p className="text-2xl font-bold text-gray-800">
                   R$ {expectedRevenue.toFixed(2)}
                 </p>
@@ -335,23 +422,25 @@ const AppointmentCalendar = () => {
                 {timeSlots.map((time) => {
                   const isAvailable = isTimeSlotAvailable(time);
                   return (
-                    <div 
-                      key={time} 
+                    <div
+                      key={time}
                       className={`p-3 text-sm rounded-lg border-2 cursor-pointer transition-all duration-200 ${
                         isAvailable
-                          ? 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100 hover:border-green-400 hover:shadow-md'
-                          : 'bg-red-50 border-red-300 text-red-800 hover:bg-red-100 hover:border-red-400 cursor-not-allowed'
+                          ? "bg-green-50 border-green-300 text-green-800 hover:bg-green-100 hover:border-green-400 hover:shadow-md"
+                          : "bg-red-50 border-red-300 text-red-800 hover:bg-red-100 hover:border-red-400 cursor-not-allowed"
                       }`}
                       onClick={() => isAvailable && handleTimeSlotClick(time)}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold">{time}</span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          isAvailable 
-                            ? 'bg-green-200 text-green-800' 
-                            : 'bg-red-200 text-red-800'
-                        }`}>
-                          {isAvailable ? 'Livre' : 'Ocupado'}
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            isAvailable
+                              ? "bg-green-200 text-green-800"
+                              : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {isAvailable ? "Livre" : "Ocupado"}
                         </span>
                       </div>
                     </div>
@@ -379,8 +468,13 @@ const AppointmentCalendar = () => {
               ) : appointments.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Nenhum agendamento para hoje</p>
-                  <Button onClick={handleNewAppointment} className="bg-gradient-to-r from-blue-500 to-green-500">
+                  <p className="text-gray-500 mb-4">
+                    Nenhum agendamento para hoje
+                  </p>
+                  <Button
+                    onClick={handleNewAppointment}
+                    className="bg-gradient-to-r from-blue-500 to-green-500"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Primeiro Agendamento
                   </Button>
@@ -388,8 +482,8 @@ const AppointmentCalendar = () => {
               ) : (
                 <div className="space-y-4">
                   {appointments.map((appointment) => (
-                    <div 
-                      key={appointment.id} 
+                    <div
+                      key={appointment.id}
                       className={`p-4 rounded-lg border-2 hover:shadow-md transition-all ${getStatusColor(appointment.status)}`}
                     >
                       <div className="flex flex-col gap-4">
@@ -397,33 +491,49 @@ const AppointmentCalendar = () => {
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
                               <span className="text-white font-medium text-sm">
-                                {appointment.client.split(' ').map(n => n[0]).join('')}
+                                {appointment.client
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
                               </span>
                             </div>
                             <div>
-                              <h3 className="font-semibold text-gray-800">{appointment.client}</h3>
-                              <p className="text-sm text-gray-600">{appointment.service}</p>
-                              <p className="text-xs text-gray-500">com {appointment.professional}</p>
+                              <h3 className="font-semibold text-gray-800">
+                                {appointment.client}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                {appointment.service}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                com {appointment.professional}
+                              </p>
                             </div>
                           </div>
-                          
+
                           <div className="flex flex-col sm:text-right">
                             <div className="flex items-center justify-start sm:justify-end space-x-2 mb-2">
                               <Clock className="w-4 h-4 text-gray-500" />
-                              <span className="font-medium">{appointment.time}</span>
-                              <span className="text-sm text-gray-500">({appointment.duration}min)</span>
+                              <span className="font-medium">
+                                {appointment.time}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                ({appointment.duration}min)
+                              </span>
                             </div>
                             <div className="flex items-center justify-start sm:justify-end space-x-2">
-                              <Badge variant="outline" className={getStatusColor(appointment.status)}>
+                              <Badge
+                                variant="outline"
+                                className={getStatusColor(appointment.status)}
+                              >
                                 {getStatusLabel(appointment.status)}
                               </Badge>
                               <span className="font-semibold text-green-600">
-                                R$ {appointment.price?.toFixed(2) || '0.00'}
+                                R$ {appointment.price?.toFixed(2) || "0.00"}
                               </span>
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Botões de Ação */}
                         <div className="border-t pt-3">
                           <AppointmentActions
@@ -448,6 +558,7 @@ const AppointmentCalendar = () => {
         onClose={handleCloseModal}
         onSave={loadAppointments}
         editingAppointment={editingAppointment}
+        onDateChange={handleDateFromModal}
       />
     </div>
   );
