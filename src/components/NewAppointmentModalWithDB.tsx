@@ -281,7 +281,7 @@ const NewAppointmentModalWithDB = ({
 
         toast({
           title: "Agendamento atualizado!",
-          description: Agendamento de ${formData.clientName} foi atualizado com sucesso,
+          description: `Agendamento de ${formData.clientName} foi atualizado com sucesso`,
         });
       } else {
         // Para novo agendamento
@@ -291,7 +291,7 @@ const NewAppointmentModalWithDB = ({
           .select("id")
           .eq("user_id", user.id)
           .or(
-            email.eq.${formData.clientEmail || "null"},name.eq.${formData.clientName},
+            `email.eq.${formData.clientEmail || "null"},name.eq.${formData.clientName}`,
           );
 
         if (searchError) throw searchError;
@@ -337,7 +337,7 @@ const NewAppointmentModalWithDB = ({
 
         toast({
           title: "Agendamento criado!",
-          description: Agendamento para ${formData.clientName} foi criado com sucesso,
+          description: `Agendamento para ${formData.clientName} foi criado com sucesso`,
         });
       }
 
@@ -373,7 +373,7 @@ const NewAppointmentModalWithDB = ({
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    return ${year}-${month}-${day};
+    return `${year}-${month}-${day}`;
   };
 
   const today = formatDateForInput();
