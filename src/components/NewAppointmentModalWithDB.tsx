@@ -1,38 +1,56 @@
-
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import TimeSlotSelector from './TimeSlotSelector';
-import PhoneInput from './PhoneInput';
-import ServiceInfoDisplay from './ServiceInfoDisplay';
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import TimeSlotSelector from "./TimeSlotSelector";
+import PhoneInput from "./PhoneInput";
+import ServiceInfoDisplay from "./ServiceInfoDisplay";
 
 interface NewAppointmentModalWithDBProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
   editingAppointment?: any;
+  onDateChange?: (dateString: string) => void; // ✅ Adicione
 }
 
-const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment }: NewAppointmentModalWithDBProps) => {
+const NewAppointmentModalWithDB = ({
+  isOpen,
+  onClose,
+  onSave,
+  editingAppointment,
+  onDateChange,
+}: NewAppointmentModalWithDBProps) => {
   const [formData, setFormData] = useState({
-    clientName: '',
-    clientEmail: '',
-    clientPhone: '',
-    service: '',
-    professional: '',
-    date: '',
-    time: '',
-    notes: ''
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    service: "",
+    professional: "",
+    date: "",
+    time: "",
+    notes: "",
   });
-  
+
   const [services, setServices] = useState([]);
   const [professionals, setProfessionals] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
@@ -51,28 +69,28 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   // Carregar dados para edição
   useEffect(() => {
     if (editingAppointment && isOpen) {
-      console.log('Carregando dados para edição:', editingAppointment);
+      console.log("Carregando dados para edição:", editingAppointment);
       setFormData({
-        clientName: editingAppointment.client || '',
-        clientEmail: editingAppointment.clientEmail || '',
-        clientPhone: editingAppointment.clientPhone || '',
-        service: editingAppointment.service_id || '',
-        professional: editingAppointment.professional_id || '',
-        date: editingAppointment.date || '',
-        time: editingAppointment.time || '',
-        notes: editingAppointment.notes || ''
+        clientName: editingAppointment.client || "",
+        clientEmail: editingAppointment.clientEmail || "",
+        clientPhone: editingAppointment.clientPhone || "",
+        service: editingAppointment.service_id || "",
+        professional: editingAppointment.professional_id || "",
+        date: editingAppointment.date || "",
+        time: editingAppointment.time || "",
+        notes: editingAppointment.notes || "",
       });
     } else if (!editingAppointment && isOpen) {
       // Resetar form para novo agendamento
       setFormData({
-        clientName: '',
-        clientEmail: '',
-        clientPhone: '',
-        service: '',
-        professional: '',
-        date: '',
-        time: '',
-        notes: ''
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        service: "",
+        professional: "",
+        date: "",
+        time: "",
+        notes: "",
       });
       setSelectedServiceInfo(null);
     }
@@ -89,7 +107,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   // Atualizar informações do serviço quando selecionado
   useEffect(() => {
     if (formData.service) {
-      const service = filteredServices.find(s => s.id === formData.service);
+      const service = filteredServices.find((s) => s.id === formData.service);
       setSelectedServiceInfo(service);
     } else {
       setSelectedServiceInfo(null);
@@ -99,65 +117,103 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   const loadServices = async () => {
     try {
       const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('name');
+        .from("services")
+        .select("*")
+        .order("name");
 
       if (error) throw error;
       setServices(data || []);
       setFilteredServices(data || []);
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error);
+      console.error("Erro ao carregar serviços:", error);
     }
   };
 
   const loadProfessionals = async () => {
     try {
       const { data, error } = await supabase
-        .from('professionals')
-        .select('*')
-        .eq('status', 'active')
-        .eq('user_id', user.id)
-        .order('name');
+        .from("professionals")
+        .select("*")
+        .eq("status", "active")
+        .eq("user_id", user.id)
+        .order("name");
 
       if (error) throw error;
       setProfessionals(data || []);
     } catch (error) {
-      console.error('Erro ao carregar profissionais:', error);
+      console.error("Erro ao carregar profissionais:", error);
+    }
+  };
+
+  // ✅ Adicione esta função para debug
+  const handleDateChange = (dateString) => {
+    console.log("Data selecionada (string):", dateString);
+
+    // Criar Date object corretamente
+    const [year, month, day] = dateString.split("-");
+    const dateObj = new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+    );
+
+    console.log("Data selecionada (objeto):", dateObj);
+    console.log(
+      "Dia da semana:",
+      dateObj.toLocaleDateString("pt-BR", { weekday: "long" }),
+    );
+
+    setFormData({ ...formData, date: dateString });
+
+    // Notificar o componente pai
+    if (onDateChange) {
+      onDateChange(dateString);
     }
   };
 
   const loadServicesByProfessional = async (professionalId: string) => {
     try {
       const { data, error } = await supabase
-        .from('professional_services')
-        .select(`
+        .from("professional_services")
+        .select(
+          `
           services (*)
-        `)
-        .eq('professional_id', professionalId);
+        `,
+        )
+        .eq("professional_id", professionalId);
 
       if (error) throw error;
-      
-      const professionalServices = data?.map(ps => ps.services).filter(Boolean) || [];
+
+      const professionalServices =
+        data?.map((ps) => ps.services).filter(Boolean) || [];
       setFilteredServices(professionalServices);
-      
+
       // Limpar serviço selecionado se não estiver mais disponível
-      if (formData.service && !professionalServices.find(s => s.id === formData.service)) {
-        setFormData(prev => ({ ...prev, service: '' }));
+      if (
+        formData.service &&
+        !professionalServices.find((s) => s.id === formData.service)
+      ) {
+        setFormData((prev) => ({ ...prev, service: "" }));
       }
     } catch (error) {
-      console.error('Erro ao carregar serviços do profissional:', error);
+      console.error("Erro ao carregar serviços do profissional:", error);
       setFilteredServices([]);
     }
   };
 
   const validatePhone = (phone: string) => {
-    const numbers = phone.replace(/\D/g, '');
+    const numbers = phone.replace(/\D/g, "");
     return numbers.length === 10 || numbers.length === 11;
   };
 
   const handleSave = async () => {
-    if (!formData.clientName || !formData.service || !formData.professional || !formData.date || !formData.time) {
+    if (
+      !formData.clientName ||
+      !formData.service ||
+      !formData.professional ||
+      !formData.date ||
+      !formData.time
+    ) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -179,7 +235,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
     const selectedDate = new Date(formData.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (selectedDate < today) {
       toast({
         title: "Data inválida",
@@ -192,26 +248,26 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
     setLoading(true);
     try {
       let clientId;
-      
+
       if (editingAppointment) {
         // Para edição, usar o cliente existente
         clientId = editingAppointment.client_id;
-        
+
         // Atualizar dados do cliente
         const { error: updateClientError } = await supabase
-          .from('clients')
+          .from("clients")
           .update({
             name: formData.clientName,
             email: formData.clientEmail || null,
             phone: formData.clientPhone || null,
           })
-          .eq('id', clientId);
+          .eq("id", clientId);
 
         if (updateClientError) throw updateClientError;
 
         // Atualizar agendamento
         const { error: updateAppointmentError } = await supabase
-          .from('appointments')
+          .from("appointments")
           .update({
             service_id: formData.service,
             professional_id: formData.professional,
@@ -219,22 +275,24 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
             time: formData.time,
             notes: formData.notes || null,
           })
-          .eq('id', editingAppointment.id);
+          .eq("id", editingAppointment.id);
 
         if (updateAppointmentError) throw updateAppointmentError;
 
         toast({
           title: "Agendamento atualizado!",
-          description: `Agendamento de ${formData.clientName} foi atualizado com sucesso`,
+          description: Agendamento de ${formData.clientName} foi atualizado com sucesso,
         });
       } else {
         // Para novo agendamento
         // Verificar se cliente já existe pelo email (se fornecido) ou nome
         const { data: existingClients, error: searchError } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('user_id', user.id)
-          .or(`email.eq.${formData.clientEmail || 'null'},name.eq.${formData.clientName}`);
+          .from("clients")
+          .select("id")
+          .eq("user_id", user.id)
+          .or(
+            email.eq.${formData.clientEmail || "null"},name.eq.${formData.clientName},
+          );
 
         if (searchError) throw searchError;
 
@@ -243,13 +301,15 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         } else {
           // Criar novo cliente
           const { data: newClient, error: clientError } = await supabase
-            .from('clients')
-            .insert([{
-              name: formData.clientName,
-              email: formData.clientEmail || null,
-              phone: formData.clientPhone || null,
-              user_id: user.id
-            }])
+            .from("clients")
+            .insert([
+              {
+                name: formData.clientName,
+                email: formData.clientEmail || null,
+                phone: formData.clientPhone || null,
+                user_id: user.id,
+              },
+            ])
             .select()
             .single();
 
@@ -259,43 +319,45 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
         // Criar agendamento
         const { error: appointmentError } = await supabase
-          .from('appointments')
-          .insert([{
-            client_id: clientId,
-            service_id: formData.service,
-            professional_id: formData.professional,
-            date: formData.date,
-            time: formData.time,
-            notes: formData.notes || null,
-            status: 'scheduled',
-            user_id: user.id
-          }]);
+          .from("appointments")
+          .insert([
+            {
+              client_id: clientId,
+              service_id: formData.service,
+              professional_id: formData.professional,
+              date: formData.date,
+              time: formData.time,
+              notes: formData.notes || null,
+              status: "scheduled",
+              user_id: user.id,
+            },
+          ]);
 
         if (appointmentError) throw appointmentError;
 
         toast({
           title: "Agendamento criado!",
-          description: `Agendamento para ${formData.clientName} foi criado com sucesso`,
+          description: Agendamento para ${formData.clientName} foi criado com sucesso,
         });
       }
 
       // Reset form
       setFormData({
-        clientName: '',
-        clientEmail: '',
-        clientPhone: '',
-        service: '',
-        professional: '',
-        date: '',
-        time: '',
-        notes: ''
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        service: "",
+        professional: "",
+        date: "",
+        time: "",
+        notes: "",
       });
       setSelectedServiceInfo(null);
-      
+
       onSave();
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar agendamento:', error);
+      console.error("Erro ao salvar agendamento:", error);
       toast({
         title: "Erro ao salvar agendamento",
         description: error.message || "Tente novamente",
@@ -307,7 +369,14 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
   };
 
   // Definir data mínima como hoje
-  const today = new Date().toISOString().split('T')[0];
+  const formatDateForInput = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return ${year}-${month}-${day};
+  };
+
+  const today = formatDateForInput();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -315,13 +384,15 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            {editingAppointment ? 'Editar Agendamento' : 'Novo Agendamento'}
+            {editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}
           </DialogTitle>
           <DialogDescription>
-            {editingAppointment ? 'Edite os dados do agendamento' : 'Preencha os dados para criar um novo agendamento'}
+            {editingAppointment
+              ? "Edite os dados do agendamento"
+              : "Preencha os dados para criar um novo agendamento"}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           {/* Dados do Cliente */}
           <div className="space-y-4">
@@ -332,7 +403,10 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                 <Input
                   id="clientName"
                   value={formData.clientName}
-                  onChange={(e) => setFormData({...formData, clientName: e.target.value})}
+                  onChange={(e) => {
+                    e.stopPropagation(); // Evita propagação
+                    setFormData({ ...formData, clientName: e.target.value });
+                  }}
                   placeholder="Nome completo do cliente"
                 />
               </div>
@@ -343,7 +417,9 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                     id="clientEmail"
                     type="email"
                     value={formData.clientEmail}
-                    onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, clientEmail: e.target.value })
+                    }
                     placeholder="email@exemplo.com"
                   />
                 </div>
@@ -352,7 +428,9 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                   <PhoneInput
                     id="clientPhone"
                     value={formData.clientPhone}
-                    onChange={(value) => setFormData({...formData, clientPhone: value})}
+                    onChange={(value) =>
+                      setFormData({ ...formData, clientPhone: value })
+                    }
                   />
                 </div>
               </div>
@@ -361,12 +439,23 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
           {/* Dados do Agendamento */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-800">Dados do Agendamento</h3>
-            
+            <h3 className="font-semibold text-gray-800">
+              Dados do Agendamento
+            </h3>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="professional">Profissional*</Label>
-                <Select value={formData.professional} onValueChange={(value) => setFormData({...formData, professional: value, service: ''})}>
+                <Select
+                  value={formData.professional}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      professional: value,
+                      service: "",
+                    })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o profissional" />
                   </SelectTrigger>
@@ -382,7 +471,12 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 
               <div>
                 <Label htmlFor="service">Serviço*</Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData({...formData, service: value})}>
+                <Select
+                  value={formData.service}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, service: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o serviço" />
                   </SelectTrigger>
@@ -413,7 +507,9 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
                 type="date"
                 min={today}
                 value={formData.date}
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
               />
             </div>
 
@@ -422,7 +518,7 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
               selectedDate={formData.date}
               selectedProfessional={formData.professional}
               selectedService={formData.service}
-              onTimeSelect={(time) => setFormData({...formData, time: time})}
+              onTimeSelect={(time) => setFormData({ ...formData, time: time })}
               selectedTime={formData.time}
             />
 
@@ -431,7 +527,9 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 placeholder="Observações adicionais sobre o agendamento..."
               />
             </div>
@@ -442,12 +540,18 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={loading}
             className="bg-gradient-to-r from-blue-500 to-green-500"
           >
-            {loading ? (editingAppointment ? "Atualizando..." : "Criando...") : (editingAppointment ? "Atualizar Agendamento" : "Criar Agendamento")}
+            {loading
+              ? editingAppointment
+                ? "Atualizando..."
+                : "Criando..."
+              : editingAppointment
+                ? "Atualizar Agendamento"
+                : "Criar Agendamento"}
           </Button>
         </div>
       </DialogContent>
@@ -456,5 +560,3 @@ const NewAppointmentModalWithDB = ({ isOpen, onClose, onSave, editingAppointment
 };
 
 export default NewAppointmentModalWithDB;
-
-
