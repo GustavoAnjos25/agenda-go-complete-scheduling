@@ -23,7 +23,7 @@ const Index = () => {
 
   // Usuário autenticado começa na página de agendamento
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 to-teal-50/50">
       <Header onTabChange={setCurrentTab} currentTab={currentTab} />
       <main className="container mx-auto px-4 py-8">
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">

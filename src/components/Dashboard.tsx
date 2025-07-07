@@ -174,13 +174,9 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={() => onNavigate?.('calendar')}
-            className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Nova Agenda
-          </Button>
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+            Sistema Online
+          </Badge>
         </div>
       </div>
 
@@ -315,10 +311,10 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
               <p className="text-gray-500 mb-4">Nenhum agendamento para hoje</p>
               <Button 
                 onClick={() => onNavigate?.('calendar')}
-                className="bg-gradient-to-r from-blue-500 to-green-500"
+                className="bg-primary hover:bg-primary/90"
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                Criar Primeiro Agendamento
+                Ir para Agenda
               </Button>
             </div>
           ) : (
@@ -369,36 +365,29 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 h-20 flex flex-col"
-              onClick={() => handleQuickAction('new-appointment')}
-            >
-              <Calendar className="w-6 h-6 mb-2" />
-              <span className="text-sm font-medium">Novo Agendamento</span>
-            </Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Button 
               variant="outline" 
-              className="h-20 flex flex-col hover:bg-green-50 border-green-200"
+              className="h-20 flex flex-col hover:bg-primary/5 border-primary/20"
               onClick={() => handleQuickAction('new-client')}
             >
-              <Users className="w-6 h-6 mb-2 text-green-600" />
+              <Users className="w-6 h-6 mb-2 text-primary" />
               <span className="text-sm font-medium">Cadastrar Cliente</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-20 flex flex-col hover:bg-purple-50 border-purple-200"
+              className="h-20 flex flex-col hover:bg-primary/5 border-primary/20"
               onClick={() => handleQuickAction('check-in')}
             >
-              <CheckCircle className="w-6 h-6 mb-2 text-purple-600" />
+              <CheckCircle className="w-6 h-6 mb-2 text-primary" />
               <span className="text-sm font-medium">Check-in</span>
             </Button>
             <Button 
               variant="outline" 
-              className="h-20 flex flex-col hover:bg-orange-50 border-orange-200"
+              className="h-20 flex flex-col hover:bg-primary/5 border-primary/20"
               onClick={() => handleQuickAction('reports')}
             >
-              <TrendingUp className="w-6 h-6 mb-2 text-orange-600" />
+              <TrendingUp className="w-6 h-6 mb-2 text-primary" />
               <span className="text-sm font-medium">Relatórios</span>
             </Button>
           </div>

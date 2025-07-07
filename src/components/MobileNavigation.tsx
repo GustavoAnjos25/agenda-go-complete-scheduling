@@ -24,15 +24,14 @@ const MobileNavigation = ({ currentTab, onTabChange }: MobileNavigationProps) =>
   const [isOpen, setIsOpen] = useState(false);
 
   const navigationItems = [
-    { id: 'home', label: 'Início', icon: Home, color: 'text-gray-600' },
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-600' },
-    { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-green-600' },
-    { id: 'clients', label: 'Clientes', icon: Users, color: 'text-purple-600' },
-    { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-orange-600' },
-    { id: 'services', label: 'Serviços', icon: Scissors, color: 'text-teal-600' },
-    { id: 'professionals', label: 'Profissionais', icon: UserCheck, color: 'text-indigo-600' },
-    { id: 'reports', label: 'Relatórios', icon: BarChart3, color: 'text-red-600' },
-    { id: 'admin', label: 'Configurações', icon: Settings, color: 'text-gray-600' }
+    { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-primary' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-primary' },
+    { id: 'clients', label: 'Clientes', icon: Users, color: 'text-primary' },
+    { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-primary' },
+    { id: 'services', label: 'Serviços', icon: Scissors, color: 'text-primary' },
+    { id: 'professionals', label: 'Profissionais', icon: UserCheck, color: 'text-primary' },
+    { id: 'reports', label: 'Relatórios', icon: BarChart3, color: 'text-primary' },
+    { id: 'admin', label: 'Configurações', icon: Settings, color: 'text-primary' }
   ];
 
   const handleTabClick = (tabId: string) => {
@@ -57,8 +56,8 @@ const MobileNavigation = ({ currentTab, onTabChange }: MobileNavigationProps) =>
         <SheetContent side="left" className="w-80">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-primary-foreground" />
               </div>
               AgendaGo
             </SheetTitle>
@@ -78,15 +77,15 @@ const MobileNavigation = ({ currentTab, onTabChange }: MobileNavigationProps) =>
                   variant={isActive ? "default" : "ghost"}
                   className={`w-full justify-start gap-3 ${
                     isActive 
-                      ? 'bg-gradient-to-r from-blue-500 to-green-500 text-white' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'hover:bg-accent'
                   }`}
                   onClick={() => handleTabClick(item.id)}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : item.color}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground' : item.color}`} />
                   <span className="font-medium">{item.label}</span>
                   {isActive && (
-                    <Badge variant="secondary" className="ml-auto bg-white/20 text-white">
+                    <Badge variant="secondary" className="ml-auto bg-primary-foreground/20 text-primary-foreground">
                       Ativo
                     </Badge>
                   )}
@@ -96,15 +95,15 @@ const MobileNavigation = ({ currentTab, onTabChange }: MobileNavigationProps) =>
           </nav>
           
           <div className="absolute bottom-6 left-6 right-6">
-            <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border">
-              <h4 className="font-semibold text-gray-800 mb-1">AgendaGo Pro</h4>
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
+              <h4 className="font-semibold text-foreground mb-1">AgendaGo Pro</h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 Sistema completo para sua empresa
               </p>
               <div className="flex flex-wrap gap-1">
-                <Badge variant="outline" className="text-xs">Supabase</Badge>
-                <Badge variant="outline" className="text-xs">Real-time</Badge>
-                <Badge variant="outline" className="text-xs">Mobile</Badge>
+                <Badge variant="outline" className="text-xs border-primary/20">Supabase</Badge>
+                <Badge variant="outline" className="text-xs border-primary/20">Real-time</Badge>
+                <Badge variant="outline" className="text-xs border-primary/20">Mobile</Badge>
               </div>
             </div>
           </div>

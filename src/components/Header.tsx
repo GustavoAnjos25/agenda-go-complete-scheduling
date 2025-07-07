@@ -21,15 +21,14 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
   const { toast } = useToast();
 
   const navigationItems = [
-    { id: 'home', label: 'Início', icon: Home, color: 'text-gray-600' },
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-blue-600' },
-    { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-green-600' },
-    { id: 'clients', label: 'Clientes', icon: Users, color: 'text-purple-600' },
-    { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-orange-600' },
-    { id: 'services', label: 'Serviços', icon: Scissors, color: 'text-teal-600' },
-    { id: 'professionals', label: 'Profissionais', icon: UserCheck, color: 'text-indigo-600' },
-    { id: 'reports', label: 'Relatórios', icon: BarChart3, color: 'text-red-600' },
-    { id: 'admin', label: 'Admin', icon: Settings, color: 'text-gray-600' }
+    { id: 'calendar', label: 'Agenda', icon: Calendar, color: 'text-primary' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-primary' },
+    { id: 'clients', label: 'Clientes', icon: Users, color: 'text-primary' },
+    { id: 'checkin', label: 'Check-in', icon: CheckCircle, color: 'text-primary' },
+    { id: 'services', label: 'Serviços', icon: Scissors, color: 'text-primary' },
+    { id: 'professionals', label: 'Profissionais', icon: UserCheck, color: 'text-primary' },
+    { id: 'reports', label: 'Relatórios', icon: BarChart3, color: 'text-primary' },
+    { id: 'admin', label: 'Admin', icon: Settings, color: 'text-primary' }
   ];
 
   const handleSignOut = async () => {
@@ -56,12 +55,12 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
         <div className="flex items-center space-x-8">
           {/* Logo e título */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onClick={() => onTabChange('home')}>
-              <Calendar className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onClick={() => onTabChange('calendar')}>
+              <Calendar className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => onTabChange('home')}>AgendaGo</h1>
-              <p className="text-xs text-gray-500">Sistema de Agendamentos</p>
+              <h1 className="text-xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors" onClick={() => onTabChange('calendar')}>AgendaGo</h1>
+              <p className="text-xs text-muted-foreground">Sistema de Agendamentos</p>
             </div>
           </div>
 
@@ -81,12 +80,12 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
                   size="sm"
                   className={`${
                     isActive 
-                      ? 'bg-gradient-to-r from-blue-500 to-green-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                   onClick={() => onTabChange(item.id)}
                 >
-                  <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-white' : item.color}`} />
+                  <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-primary-foreground' : item.color}`} />
                   {item.label}
                 </Button>
               );
@@ -96,7 +95,7 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
 
         {/* Menu do usuário */}
         <div className="flex items-center space-x-4">
-          <Badge variant="outline" className="hidden sm:inline-flex bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
             ✓ Online
           </Badge>
           
@@ -104,7 +103,7 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                     {user?.email?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

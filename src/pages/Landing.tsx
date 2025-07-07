@@ -12,37 +12,37 @@ const Landing = () => {
       icon: Calendar,
       title: 'Agendamentos Inteligentes',
       description: 'Sistema completo para gerenciar horários, evitar conflitos e otimizar sua agenda automaticamente',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-emerald-500 to-emerald-600'
     },
     {
       icon: Users,
       title: 'Controle Total de Clientes',
       description: 'Cadastre, organize e acompanhe o histórico completo de todos os seus clientes em um só lugar',
-      color: 'from-green-500 to-green-600'
+      color: 'from-teal-500 to-cyan-500'
     },
     {
       icon: BarChart3,
       title: 'Relatórios e Análises',
       description: 'Acompanhe seu faturamento, performance e crescimento com dashboards visuais e relatórios detalhados',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-slate-500 to-slate-600'
     },
     {
       icon: CheckCircle,
       title: 'Check-in Automatizado',
       description: 'Sistema de check-in que agiliza o atendimento e melhora a experiência dos seus clientes',
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-emerald-600 to-green-600'
     },
     {
       icon: Smartphone,
       title: '100% Responsivo',
       description: 'Acesse de qualquer dispositivo - computador, tablet ou celular. Sua agenda sempre na palma da mão',
-      color: 'from-teal-500 to-teal-600'
+      color: 'from-teal-600 to-blue-500'
     },
     {
       icon: Star,
       title: 'Gestão de Equipe',
       description: 'Gerencie vários profissionais, horários individuais e disponibilidade de cada membro da equipe',
-      color: 'from-red-500 to-red-600'
+      color: 'from-slate-600 to-emerald-500'
     }
   ];
 
@@ -94,12 +94,12 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center shadow-lg">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">AgendaGo</h1>
-                <p className="text-xs text-gray-500">Sistema Profissional de Agendamentos</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">AgendaGo</h1>
+                <p className="text-xs text-slate-600">Sistema Profissional de Agendamentos</p>
               </div>
             </div>
             
@@ -112,7 +112,7 @@ const Landing = () => {
               </Button>
               <Button 
                 onClick={() => navigate('/auth')}
-                className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg"
               >
                 Começar Agora
               </Button>
@@ -125,12 +125,12 @@ const Landing = () => {
         {/* Hero Section */}
         <section className="py-20 px-4">
           <div className="container mx-auto text-center">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 mb-6">
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 mb-6">
               ✨ Sistema Completo de Agendamentos
             </Badge>
-            <h2 className="text-5xl font-bold text-gray-800 mb-6 leading-tight">
+            <h2 className="text-5xl font-bold text-slate-800 mb-6 leading-tight">
               Transforme seu Negócio com<br />
-              <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 Agendamentos Inteligentes
               </span>
             </h2>
@@ -142,7 +142,7 @@ const Landing = () => {
               <Button 
                 size="lg"
                 onClick={() => navigate('/auth')}
-                className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 px-8 py-4 text-lg"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 px-8 py-4 text-lg shadow-xl"
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 Criar Minha Conta Grátis
@@ -211,7 +211,7 @@ const Landing = () => {
                 const Icon = benefit.icon;
                 return (
                   <div key={index} className="text-center group">
-                    <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                    <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                       <Icon className="w-10 h-10 text-white" />
                     </div>
                     <h4 className="text-xl font-bold text-gray-800 mb-4">{benefit.title}</h4>
@@ -237,7 +237,7 @@ const Landing = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {howItWorks.map((step, index) => (
                 <div key={index} className="text-center group">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                  <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                     <span className="text-2xl font-bold text-white">{step.step}</span>
                   </div>
                   <h4 className="text-lg font-bold text-gray-800 mb-3">{step.title}</h4>
@@ -251,11 +251,11 @@ const Landing = () => {
         {/* CTA Section */}
         <section className="py-20 px-4">
           <div className="container mx-auto">
-            <Card className="bg-gradient-to-r from-blue-500 to-green-500 text-white border-0 overflow-hidden relative">
+            <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 overflow-hidden relative shadow-2xl">
               <div className="absolute inset-0 bg-black/10"></div>
               <CardContent className="relative p-12 text-center">
                 <h3 className="text-4xl font-bold mb-6">Pronto para revolucionar seus agendamentos?</h3>
-                <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xl text-emerald-100 mb-8 max-w-3xl mx-auto leading-relaxed">
                   Junte-se a milhares de profissionais que já transformaram seus negócios com o AgendaGo. 
                   Comece gratuitamente e veja a diferença em poucos minutos.
                 </p>
@@ -263,22 +263,22 @@ const Landing = () => {
                   <div className="flex items-center justify-center space-x-8 mb-6 sm:mb-0">
                     <div className="text-center">
                       <div className="text-3xl font-bold">∞</div>
-                      <div className="text-sm text-blue-100">Agendamentos</div>
+                      <div className="text-sm text-emerald-100">Agendamentos</div>
                     </div>
                     <div className="text-center">
                       <div className="text-3xl font-bold">∞</div>
-                      <div className="text-sm text-blue-100">Clientes</div>
+                      <div className="text-sm text-emerald-100">Clientes</div>
                     </div>
                     <div className="text-center">
                       <div className="text-3xl font-bold">24/7</div>
-                      <div className="text-sm text-blue-100">Disponível</div>
+                      <div className="text-sm text-emerald-100">Disponível</div>
                     </div>
                   </div>
                 </div>
                 <Button 
                   size="lg"
                   onClick={() => navigate('/auth')}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-12 py-4 text-lg font-semibold"
+                  className="bg-white text-emerald-600 hover:bg-emerald-50 px-12 py-4 text-lg font-semibold shadow-xl"
                 >
                   <Star className="w-5 h-5 mr-2" />
                   Começar Agora - É Grátis!
@@ -293,7 +293,7 @@ const Landing = () => {
       <footer className="bg-gray-800 text-white py-12 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <h4 className="text-xl font-bold">AgendaGo</h4>
