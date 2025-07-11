@@ -94,18 +94,111 @@ const Reports = () => {
     loadData();
   }, [user, dateFrom, dateTo, selectedProfessional, selectedService]);
 
-  const exportToPDF = () => {
-    toast({
-      title: "Exportando relatório",
-      description: "Funcionalidade será implementada em breve",
-    });
+  const exportToPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const autoTable = await import('jspdf-autotable');
+      
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFontSize(20);
+      doc.text('Relatório de Agendamentos - AgendaGo', 20, 20);
+      
+      // Informações do filtro
+      doc.setFontSize(12);
+      let yPosition = 35;
+      if (dateFrom) {
+        doc.text(`Data inicial: ${new Date(dateFrom).toLocaleDateString('pt-BR')}`, 20, yPosition);
+        yPosition += 7;
+      }
+      if (dateTo) {
+        doc.text(`Data final: ${new Date(dateTo).toLocaleDateString('pt-BR')}`, 20, yPosition);
+        yPosition += 7;
+      }
+      
+      // Estatísticas
+      yPosition += 10;
+      doc.text(`Total de agendamentos: ${stats.total}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Confirmados: ${stats.confirmed}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Concluídos: ${stats.completed}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Cancelados: ${stats.cancelled}`, 20, yPosition);
+      yPosition += 7;
+      doc.text(`Faturamento: R$ ${stats.revenue.toFixed(2)}`, 20, yPosition);
+      
+      // Tabela de agendamentos
+      const tableData = appointments.map(apt => [
+        new Date(apt.date).toLocaleDateString('pt-BR'),
+        apt.time,
+        apt.clients?.name || 'N/A',
+        apt.services?.name || 'N/A',
+        apt.professionals?.name || 'N/A',
+        apt.status === 'completed' ? 'Concluído' :
+        apt.status === 'confirmed' ? 'Confirmado' :
+        apt.status === 'cancelled' ? 'Cancelado' : 'Agendado',
+        `R$ ${apt.services?.price?.toFixed(2) || '0.00'}`
+      ]);
+      
+      autoTable.default(doc, {
+        head: [['Data', 'Horário', 'Cliente', 'Serviço', 'Profissional', 'Status', 'Valor']],
+        body: tableData,
+        startY: yPosition + 15,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [160, 84, 39] }
+      });
+      
+      doc.save('relatorio-agendamentos.pdf');
+      
+      toast({
+        title: "Relatório exportado!",
+        description: "PDF gerado com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
   };
 
-  const exportToExcel = () => {
-    toast({
-      title: "Exportando para Excel",
-      description: "Funcionalidade será implementada em breve",
-    });
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      
+      const ws = XLSX.utils.json_to_sheet(appointments.map(apt => ({
+        'Data': new Date(apt.date).toLocaleDateString('pt-BR'),
+        'Horário': apt.time,
+        'Cliente': apt.clients?.name || 'N/A',
+        'Serviço': apt.services?.name || 'N/A',
+        'Profissional': apt.professionals?.name || 'N/A',
+        'Status': apt.status === 'completed' ? 'Concluído' :
+                  apt.status === 'confirmed' ? 'Confirmado' :
+                  apt.status === 'cancelled' ? 'Cancelado' : 'Agendado',
+        'Valor': `R$ ${apt.services?.price?.toFixed(2) || '0.00'}`
+      })));
+      
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Agendamentos');
+      
+      XLSX.writeFile(wb, 'relatorio-agendamentos.xlsx');
+      
+      toast({
+        title: "Relatório exportado!",
+        description: "Excel gerado com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
   };
 
   const chartData = [
@@ -131,12 +224,12 @@ const Reports = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Relatórios</h1>
-          <p className="text-gray-600">Análise detalhada dos seus agendamentos</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Relatórios</h1>
+          <p className="text-sm sm:text-base text-gray-600">Análise detalhada dos seus agendamentos</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button onClick={exportToPDF} variant="outline" className="flex items-center gap-2">
             <Download className="w-4 h-4" />
             PDF
@@ -157,7 +250,7 @@ const Reports = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="dateFrom">Data Inicial</Label>
               <Input
@@ -209,7 +302,7 @@ const Reports = () => {
       </Card>
 
       {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Agendamentos</CardTitle>
@@ -253,7 +346,7 @@ const Reports = () => {
       </div>
 
       {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Status dos Agendamentos</CardTitle>

@@ -262,10 +262,10 @@ const AppointmentCalendar = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2 sm:px-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Agenda</h1>
-          <p className="text-gray-600">Gerencie todos os agendamentos</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Agenda</h1>
+          <p className="text-sm sm:text-base text-gray-600">Gerencie todos os agendamentos</p>
         </div>
 
         <Button
@@ -398,7 +398,7 @@ const AppointmentCalendar = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
         {/* Time Slots */}
         <div className="lg:col-span-1">
           <Card>

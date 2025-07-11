@@ -245,6 +245,23 @@ const NewAppointmentModalWithDB = ({
       return;
     }
 
+    // Validar se o horário não é anterior ao atual (apenas para hoje)
+    if (selectedDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const [hours, minutes] = formData.time.split(':');
+      const appointmentTime = new Date(selectedDate);
+      appointmentTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      if (appointmentTime <= now) {
+        toast({
+          title: "Horário inválido",
+          description: "Não é possível agendar para horários que já passaram",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       let clientId;
