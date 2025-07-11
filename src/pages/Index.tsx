@@ -24,13 +24,8 @@ const Index = () => {
   // Usuário autenticado começa na página de agendamento
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 to-teal-50/50">
-      <div className="sm:hidden">
-        <div className="bg-primary text-primary-foreground px-4 py-2 text-center text-sm">
-          AgendaGo - Sistema de Agendamentos
-        </div>
-      </div>
       <Header onTabChange={setCurrentTab} currentTab={currentTab} />
-      <main className="container mx-auto px-4 py-4 sm:py-8">
+      <main className="container mx-auto px-4 py-8">
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
           <TabsContent value="dashboard">
             <Dashboard onNavigate={setCurrentTab} />

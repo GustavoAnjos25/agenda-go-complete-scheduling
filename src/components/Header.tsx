@@ -39,7 +39,7 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
       } catch (err) {
         // Continue mesmo se falhar
       }
-      window.location.href = '/';
+      window.location.href = '/auth';
     } catch (error) {
       toast({
         title: "Erro ao sair",
@@ -50,16 +50,16 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 sm:space-x-8">
+        <div className="flex items-center space-x-8">
           {/* Logo e título */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onClick={() => onTabChange('calendar')}>
-              <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-primary-foreground" />
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" onClick={() => onTabChange('calendar')}>
+              <Calendar className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors" onClick={() => onTabChange('calendar')}>AgendaGo</h1>
+            <div>
+              <h1 className="text-xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors" onClick={() => onTabChange('calendar')}>AgendaGo</h1>
               <p className="text-xs text-muted-foreground">Sistema de Agendamentos</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ const Header = ({ onTabChange, currentTab }: HeaderProps) => {
         </div>
 
         {/* Menu do usuário */}
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex items-center space-x-4">
           <Badge variant="outline" className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
             ✓ Online
           </Badge>
